@@ -1,5 +1,6 @@
 const http = require('http');
 const https = require('https');
+const tls = require('tls');
 const crypto = require('crypto');
 const { URL } = require('url');
 
@@ -13,29 +14,178 @@ const MIXIN_KEY_ENC_TAB = [
   51, 44, 34, 20, 48, 41, 36, 6, 17, 60, 22, 22, 62, 63, 61, 4,
 ];
 
-// ========== 模拟固定浏览器身份（复用 Cookie & UA，不被识别为爬虫） ==========
 function randStr(len) {
   return crypto.randomBytes(Math.ceil(len / 2)).toString('hex').slice(0, len);
 }
 
-// 启动时生成一次，整个生命周期复用
-const SESSION_COOKIES = (() => {
-  const ts = Date.now();
-  const fp = `${ts}_${Math.floor(Math.random() * 1e7)}_${Math.floor(Math.random() * 1e7)}`;
-  return [
-    `buvid3=${randStr(8)}-${randStr(4)}-${randStr(4)}-${randStr(4)}-${randStr(12)}infoc`,
-    `buvid4=${randStr(16)}`,
-    `_uuid=${randStr(32)}`,
-    `fingerprint=${fp}`,
-    `buvid_fp=${fp}`,
-    `buvid_fp_clean=${fp}`,
-    `b_nut=${Date.now()}`,
-    `buvid_ts=${Math.floor(Date.now() / 1000)}`,
-    `rpdid=|(${randStr(8)}${randStr(4)})`,
-  ].join('; ');
-})();
+// ========== 代理池（启动时自动获取免费代理，轮换 IP） ==========
+let proxyPool = [];
+let proxyIdx = 0;
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+// 多个免费代理源
+const PROXY_SOURCES = [
+  'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all&ssl=all&anonymity=all',
+  'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt',
+  'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt',
+  'https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt',
+];
+
+async function fetchProxies() {
+  const all = new Set();
+  for (const url of PROXY_SOURCES) {
+    try {
+      const data = await new Promise((resolve) => {
+        https.get(url, { timeout: 8000 }, res => {
+          let d = '';
+          res.on('data', c => d += c);
+          res.on('end', () => resolve(d));
+        }).on('error', () => resolve(''));
+      });
+      data.trim().split('\n').filter(Boolean).forEach(line => {
+        const parts = line.trim().split(':');
+        if (parts.length === 2) all.add(line.trim());
+      });
+    } catch (_) {}
+  }
+  const arr = [...all].map(p => {
+    const [host, port] = p.split(':');
+    return { host, port: parseInt(port) };
+  });
+  console.log(`[代理] 获取到 ${arr.length} 个代理，开始连通性测试...`);
+  return arr;
+}
+
+// 测试代理是否可用
+async function testProxy(proxy) {
+  return new Promise(resolve => {
+    const req = http.request({
+      hostname: proxy.host, port: proxy.port,
+      method: 'CONNECT', path: 'www.baidu.com:443',
+      timeout: 5000,
+    });
+    req.on('connect', () => { req.destroy(); resolve(true); });
+    req.on('error', () => resolve(false));
+    req.on('timeout', () => { req.destroy(); resolve(false); });
+    req.end();
+  });
+}
+
+// 初始化代理池
+async function initProxyPool() {
+  const all = await fetchProxies();
+  // 测试前 50 个，找 10 个可用的
+  const working = [];
+  const toTest = all.slice(0, 80);
+  for (const p of toTest) {
+    if (await testProxy(p)) {
+      working.push(p);
+      if (working.length >= 15) break;
+    }
+  }
+  if (working.length > 0) {
+    proxyPool = working;
+    console.log(`[代理] ${working.length} 个代理可用: ${working.map(p => `${p.host}:${p.port}`).join(', ')}`);
+  } else {
+    console.log('[代理] 无可用代理，将使用直连');
+  }
+}
+
+// 获取下一个代理
+function nextProxy() {
+  if (proxyPool.length === 0) return null;
+  proxyIdx = (proxyIdx + 1) % proxyPool.length;
+  return proxyPool[proxyIdx];
+}
+
+// 每 30 分钟刷新代理池
+setInterval(() => initProxyPool(), 30 * 60 * 1000);
+
+// ========== 通过代理发送 HTTPS 请求 ==========
+function biliFetchOnce(path, useProxy = true) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(path, `https://${BILI_API}`);
+    const proxy = useProxy ? nextProxy() : null;
+
+    // 生成每个请求独立的 Cookie（更像真实用户）
+    const ts = Date.now();
+    const fp = `${ts}_${Math.floor(Math.random() * 1e7)}_${Math.floor(Math.random() * 1e7)}`;
+    const cookies = [
+      `buvid3=${randStr(8)}-${randStr(4)}-${randStr(4)}-${randStr(4)}-${randStr(12)}infoc`,
+      `buvid4=${randStr(16)}`,
+      `_uuid=${randStr(32)}`,
+      `fingerprint=${fp}`,
+      `buvid_fp=${fp}`,
+      `buvid_fp_clean=${fp}`,
+      `b_nut=${ts}`,
+      `buvid_ts=${Math.floor(ts / 1000)}`,
+      `rpdid=|(${randStr(8)}${randStr(4)})`,
+    ].join('; ');
+
+    const headers = {
+      'User-Agent': (() => {
+        const uas = [
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+          'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
+        ];
+        return uas[Math.floor(Math.random() * uas.length)];
+      })(),
+      'Referer': 'https://www.bilibili.com/',
+      'Origin': 'https://www.bilibili.com',
+      'Cookie': cookies,
+      'Accept': 'application/json, text/plain, */*',
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Sec-Fetch-Dest': 'empty',
+      'Sec-Fetch-Mode': 'cors',
+      'Sec-Fetch-Site': 'same-site',
+    };
+
+    const doRequest = (socket) => {
+      const opts = socket ? {
+        socket, host: BILI_API, path: u.pathname + u.search,
+        method: 'GET', headers, rejectUnauthorized: false,
+      } : {
+        hostname: BILI_API, port: 443, path: u.pathname + u.search,
+        method: 'GET', headers, rejectUnauthorized: false,
+      };
+      const req = https.request(opts, res => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          try { resolve(JSON.parse(data)); } catch { reject(new Error('非JSON响应')); }
+        });
+      });
+      req.on('error', reject);
+      req.setTimeout(20000, () => { req.destroy(); reject(new Error('超时')); });
+      req.end();
+    };
+
+    if (proxy) {
+      // 通过 HTTP 代理建立 CONNECT 隧道
+      const conn = http.request({
+        hostname: proxy.host, port: proxy.port,
+        method: 'CONNECT', path: `${BILI_API}:443`,
+        timeout: 10000,
+      });
+      conn.on('connect', (res, socket) => {
+        const tlsSocket = tls.connect({
+          socket, host: BILI_API, servername: BILI_API,
+          rejectUnauthorized: false,
+        }, () => doRequest(tlsSocket));
+        tlsSocket.on('error', reject);
+      });
+      conn.on('error', (err) => {
+        // 代理挂了，移出池子，降级直连
+        proxyPool = proxyPool.filter(p => p.host !== proxy.host || p.port !== proxy.port);
+        doRequest();
+      });
+      conn.on('timeout', () => { conn.destroy(); doRequest(); });
+      conn.end();
+    } else {
+      doRequest();
+    }
+  });
+}
 
 // ========== WBI 签名 ==========
 let wbiKeys = null;
@@ -48,13 +198,12 @@ async function getWbiKeys() {
   wbiFetching = true;
   try {
     await sleep(200 + Math.random() * 800);
-    const data = await biliFetch('/x/web-interface/nav');
+    const data = await biliFetch('/x/web-interface/nav', false);
     const img = data.data?.wbi_img;
     if (!img) throw new Error('获取WBI密钥失败');
     const imgKey = img.img_url.replace(/^https?:\/\/[^/]+\//, '').replace(/\.png$/, '');
     const subKey = img.sub_url.replace(/^https?:\/\/[^/]+\//, '').replace(/\.png$/, '');
     wbiKeys = { imgKey, subKey };
-    // 2小时刷新，减少nav接口调用
     setTimeout(() => { wbiKeys = null; }, 2 * 60 * 60 * 1000);
   } finally {
     wbiFetching = false;
@@ -82,12 +231,11 @@ async function wbiSign(params) {
   return params;
 }
 
-// ========== 带重试的 B 站 API 请求 ==========
 function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-// ========== 请求队列：序列化B站请求，间隔至少 1 秒 ==========
+// ========== 请求队列（序列化请求、降频、自动重试） ==========
 const requestQueue = [];
 let processing = false;
 
@@ -95,14 +243,14 @@ async function processQueue() {
   if (processing) return;
   processing = true;
   while (requestQueue.length > 0) {
-    const { path, retries, resolve, reject } = requestQueue.shift();
+    const { path, retries, resolve, reject, useProxy } = requestQueue.shift();
     let result = null;
     let lastErr = null;
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
-        result = await biliFetchOnce(path);
+        result = await biliFetchOnce(path, useProxy);
         if (result && result.code === -799) {
-          const wait = 2000 * (attempt + 1) + Math.random() * 1000;
+          const wait = 3000 * (attempt + 1) + Math.random() * 2000;
           await sleep(wait);
           continue;
         }
@@ -111,56 +259,25 @@ async function processQueue() {
       } catch (e) {
         lastErr = e;
         if (attempt < retries - 1) {
-          await sleep(1000 + Math.random() * 1000);
+          await sleep(1500 + Math.random() * 1500);
         }
       }
     }
     if (lastErr) { reject(lastErr); processing = false; return; }
     resolve(result);
-    if (requestQueue.length > 0) await sleep(1000 + Math.random() * 1000);
+    if (requestQueue.length > 0) await sleep(1500 + Math.random() * 1500);
   }
   processing = false;
 }
 
-function biliFetch(path, retries = 2) {
+function biliFetch(path, useProxy = true, retries = 3) {
   return new Promise((resolve, reject) => {
-    requestQueue.push({ path, retries, resolve, reject });
+    requestQueue.push({ path, retries, resolve, reject, useProxy });
     processQueue();
   });
 }
 
-function biliFetchOnce(path) {
-  return new Promise((resolve, reject) => {
-    const u = new URL(path, `https://${BILI_API}`);
-    const opts = {
-      hostname: BILI_API, port: 443,
-      path: u.pathname + u.search,
-      method: 'GET',
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Referer': 'https://www.bilibili.com/',
-        'Origin': 'https://www.bilibili.com',
-        'Cookie': SESSION_COOKIES,
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-    };
-    const req = https.request(opts, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); } catch { reject(new Error('非JSON响应')); }
-      });
-    });
-    req.on('error', reject);
-    req.setTimeout(20000, () => { req.destroy(); reject(new Error('超时')); });
-    req.end();
-  });
-}
-
+// ========== HTTP 服务 ==========
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -177,12 +294,11 @@ const server = http.createServer(async (req, res) => {
       const infoParams = await wbiSign({ mid });
       const qs = Object.entries(infoParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
 
-      const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`);
-      // 延迟后再请求视频数
-      await sleep(800 + Math.random() * 1200);
+      const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`, true, 3);
+      await sleep(1000 + Math.random() * 1500);
       const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
       const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 3).catch(() => null);
+      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, true, 3).catch(() => null);
 
       res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch }));
     } else {
@@ -195,6 +311,10 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '127.0.0.1', () => {
-  console.log(`B站代理服务运行在 http://127.0.0.1:${PORT}`);
-});
+// 启动：初始化代理池，然后启动 HTTP 服务
+(async () => {
+  await initProxyPool();
+  server.listen(PORT, '127.0.0.1', () => {
+    console.log(`[B站代理] 运行在 http://127.0.0.1:${PORT}，代理池 ${proxyPool.length} 个`);
+  });
+})();
