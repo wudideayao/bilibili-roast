@@ -1,6 +1,7 @@
 const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
+const fs = require('fs');
 const { URL } = require('url');
 
 const PORT = 3456;
@@ -33,6 +34,9 @@ const FIXED_COOKIES = (() => {
     `rpdid=|(${randStr(8)}${randStr(4)})`,
   ].join('; ');
 })();
+
+// 从环境变量读取 B 站登录态（解锁更多数据 + 抗风控）
+const USER_COOKIE = process.env.BILI_USER_COOKIE || (() => { try { return fs.readFileSync('/opt/bili_cookie','utf8').trim(); } catch(e) { return ''; } })();
 
 // ========== WBI 签名 ==========
 let wbiKeys = null;
@@ -129,7 +133,7 @@ async function processQueue() {
     }
     if (lastErr) { reject(lastErr); processing = false; return; }
     resolve(result);
-    // 请求间隔至少 2 秒
+    // 请求间隔至少 4 秒（防风控）
     if (requestQueue.length > 0) await sleep(4000 + Math.random() * 2000);
   }
   processing = false;
@@ -153,7 +157,7 @@ function biliFetchOnce(path) {
         'User-Agent': USER_AGENT,
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com',
-        'Cookie': FIXED_COOKIES,
+        'Cookie': USER_COOKIE ? FIXED_COOKIES + '; ' + USER_COOKIE : FIXED_COOKIES,
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
         'Sec-Fetch-Dest': 'empty',
@@ -174,6 +178,40 @@ function biliFetchOnce(path) {
   });
 }
 
+// ========== DeepSeek 毒舌文案生成 ==========
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || '';
+
+async function generateDeepSeekRoast(data) {
+  if (!DEEPSEEK_KEY) return null;
+  const prompt = '根据以下B站UP主数据写一段毒舌点评（30-60字）：\n'
+    + '名称：' + data.name + '\n粉丝：' + data.fans
+    + '\n总播放：' + data.totalViews + '\n总点赞：' + data.totalLikes
+    + '\n视频数：' + data.videoCount + '\n等级：Lv.' + data.level
+    + '\n简介：' + (data.sign || '无');
+  return new Promise(function(r) {
+    var body = JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        { role: 'system', content: '你是B站锐评机器人。每次回复风格都不同，犀利幽默。直接输出点评，不要前缀，不要Emoji。' },
+        { role: 'user', content: prompt }
+      ],
+      temperature: 0.95, max_tokens: 200,
+    });
+    var opts = {
+      hostname: 'api.deepseek.com', path: '/v1/chat/completions', method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
+    };
+    var req = https.request(opts, function(res) {
+      var d = ''; res.on('data', function(c) { d += c; });
+      res.on('end', function() {
+        try { r(JSON.parse(d).choices?.[0]?.message?.content?.trim() || null); } catch(e) { r(null); }
+      });
+    });
+    req.on('error', function() { r(null); });
+    req.write(body); req.end();
+  });
+}
+
 // ========== HTTP 服务 ==========
 const server = http.createServer(async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -191,7 +229,7 @@ const server = http.createServer(async (req, res) => {
       const cacheKey = `user:${mid}`;
       const cached = getCache(cacheKey);
       if (cached) {
-        res.end(JSON.stringify({ code: 0, info: cached.info, search: cached.search, relation: cached.relation, cached: true }));
+        res.end(JSON.stringify({ code: 0, info: cached.info, search: cached.search, relation: cached.relation, upstat: cached.upstat, cached: true }));
         return;
       }
 
@@ -201,13 +239,26 @@ const server = http.createServer(async (req, res) => {
 
       const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`, 4);
       const rawRelation = await biliFetch(`/x/relation/stat?vmid=${mid}`, 2).catch(() => null);
+      const rawUpstat = USER_COOKIE ? await biliFetch(`/x/space/upstat?mid=${mid}`, 2).catch(() => null) : null;
       const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
       const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 2).catch(() => null);
+      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 5).catch(() => null);
 
-      setCache(cacheKey, { info: rawInfo, search: rawSearch, relation: rawRelation });
+      setCache(cacheKey, { info: rawInfo, search: rawSearch, relation: rawRelation, upstat: rawUpstat });
 
-      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch, relation: rawRelation }));
+      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch, relation: rawRelation, upstat: rawUpstat }));
+    } else if (path === '/api/roast' && req.method === 'POST') {
+      let body = '';
+      req.on('data', function(c) { body += c; });
+      req.on('end', async function() {
+        try {
+          var data = JSON.parse(body);
+          var roast = await generateDeepSeekRoast(data);
+          res.end(JSON.stringify({ code: 0, roast: roast || '' }));
+        } catch (err) {
+          res.end(JSON.stringify({ code: -1, error: err.message }));
+        }
+      });
     } else {
       res.statusCode = 404;
       res.end(JSON.stringify({ error: '未知路径' }));
@@ -220,6 +271,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`[B站代理] http://127.0.0.1:${PORT}`);
-  // 预加载 WBI 密钥（第一次请求慢，但后续快）
+  if (USER_COOKIE) console.log('[B站代理] 已加载登录态，将使用账号身份请求');
+  // 预加载 WBI 密钥
   getWbiKeys().then(() => console.log('[WBI] 密钥已缓存')).catch(() => {});
 });

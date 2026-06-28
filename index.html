@@ -439,7 +439,7 @@ footer a { color: var(--black); font-weight: 700; }
   <div class="result-card">
     <div class="result-header">
       <div class="header-left">
-        <div class="avatar" id="avatar"><img src="" alt="avatar"></div>
+        <div class="avatar" id="avatar"><img src="" alt="avatar" referrerpolicy="no-referrer"></div>
         <div class="user-meta">
           <div class="uname" id="uname">加载中</div>
           <div class="uid" id="uidDisplay">UID: --</div>
@@ -492,10 +492,9 @@ async function fetchBilibiliData(uid) {
     const info = res.info?.data;
     if (!info) throw new Error(res.info?.message || '用户不存在，请检查UID');
     const stat = res.relation?.data || {};
-
-    // 从 arc/search 获取视频总数
-    const searchData = res.search?.data;
-    const videoCount = searchData?.page?.count || 0;
+    const up = res.upstat?.data?.archive || {};
+    const upLikes = res.upstat?.data?.likes || 0;
+    const videoCount = res.search?.data?.page?.count || 0;
 
     return {
       uid: info.mid,
@@ -505,8 +504,8 @@ async function fetchBilibiliData(uid) {
       level: info.level,
       fans: stat.follower || 0,
       following: stat.following || 0,
-      totalViews: 0,
-      totalLikes: 0,
+      totalViews: up.view || 0,
+      totalLikes: upLikes,
       videoCount,
     };
   }
@@ -663,7 +662,7 @@ function generateRoast(data) {
 const LOADING_TEXTS = [
   '正在查询B站API...', '分析粉丝成分中...', '计算播放量密度...',
   '评估视频质量...', '翻看历史视频...', '跟推荐算法激烈讨论...',
-  '准备扎心台词...', '格式化毒舌输出...',
+  '准备扎心台词...', '格式化毒舌输出...', 'AI 锐评生成中...',
 ];
 
 async function startRoast() {
@@ -704,6 +703,17 @@ async function startRoast() {
     document.getElementById('loading').classList.remove('active');
     document.getElementById('result').classList.add('active');
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // 异步调用 AI 毒舌文案（不阻塞显示）
+    fetch('/roast/api/v2/roast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); }).then(function(r) {
+      if (r.code === 0 && r.roast) {
+        document.getElementById('roastText').textContent = r.roast;
+      }
+    }).catch(function() {});
   } catch (err) {
     clearInterval(tInt); clearInterval(pInt);
     document.getElementById('loading').classList.remove('active');
@@ -730,7 +740,7 @@ function displayResult(data) {
   document.getElementById('dFans').textContent = fmt(data.fans);
   document.getElementById('dViews').textContent = fmt(data.totalViews);
   document.getElementById('dLikes').textContent = fmt(data.totalLikes);
-  document.getElementById('dVideos').textContent = fmt(data.videoCount);
+  document.getElementById('dVideos').textContent = data.videoCount > 0 ? fmt(data.videoCount) : '??';
 
   // 标签
   const tc = document.getElementById('tags');
