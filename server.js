@@ -180,13 +180,13 @@ const server = http.createServer(async (req, res) => {
       const qs = Object.entries(infoParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
 
       const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`);
-      // 两个请求之间随机延迟，避免触发频率限制
-      await sleep(1000 + Math.random() * 2000);
-      const statParams = await wbiSign({ mid });
-      const statQs = Object.entries(statParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-      const rawStat = await biliFetch(`/x/space/upstat?${statQs}`);
+      // 延迟后再请求视频数
+      await sleep(1500 + Math.random() * 2000);
+      const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
+      const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
+      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`);
 
-      res.end(JSON.stringify({ code: 0, info: rawInfo, stat: rawStat }));
+      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch }));
     } else {
       res.statusCode = 404;
       res.end(JSON.stringify({ error: '未知路径' }));

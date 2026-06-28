@@ -491,7 +491,10 @@ async function fetchBilibiliData(uid) {
 
     const info = res.info?.data;
     if (!info) throw new Error(res.info?.message || '用户不存在，请检查UID');
-    const stat = res.stat?.data || {};
+
+    // 从 arc/search 获取视频总数
+    const searchData = res.search?.data;
+    const videoCount = searchData?.page?.count || 0;
 
     return {
       uid: info.mid,
@@ -501,9 +504,9 @@ async function fetchBilibiliData(uid) {
       level: info.level,
       fans: info.follower || 0,
       following: info.following || 0,
-      totalViews: stat.archive?.view || 0,
-      totalLikes: stat.likes || 0,
-      videoCount: 0,
+      totalViews: 0,
+      totalLikes: 0,
+      videoCount,
     };
   }
 
