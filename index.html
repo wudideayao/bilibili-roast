@@ -475,11 +475,14 @@ footer a { color: var(--black); font-weight: 700; }
 </footer>
 
 <script>
+// ========== CORS 代理 ==========
+const CORS_PROXY = 'https://corsproxy.io/?';
+
 // ========== API ==========
 const API = {
-  userInfo: uid => `https://api.bilibili.com/x/space/acc/info?mid=${uid}`,
-  upstat: uid => `https://api.bilibili.com/x/space/upstat?mid=${uid}`,
-  videoCount: uid => `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=1&pn=1`,
+  userInfo: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/acc/info?mid=${uid}`),
+  upstat: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/upstat?mid=${uid}`),
+  videoCount: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=1&pn=1`),
 };
 
 async function fetchBilibiliData(uid) {
