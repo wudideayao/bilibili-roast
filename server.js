@@ -61,7 +61,7 @@ async function testProxy(proxy) {
     const req = http.request({
       hostname: proxy.host, port: proxy.port,
       method: 'CONNECT', path: 'www.baidu.com:443',
-      timeout: 5000,
+      timeout: 3000,
     });
     req.on('connect', () => { req.destroy(); resolve(true); });
     req.on('error', () => resolve(false));
@@ -73,13 +73,13 @@ async function testProxy(proxy) {
 // 初始化代理池
 async function initProxyPool() {
   const all = await fetchProxies();
-  // 测试前 50 个，找 10 个可用的
+  // 测试前 30 个，找到 5 个可用即可
   const working = [];
-  const toTest = all.slice(0, 80);
+  const toTest = all.slice(0, 30);
   for (const p of toTest) {
     if (await testProxy(p)) {
       working.push(p);
-      if (working.length >= 15) break;
+      if (working.length >= 5) break;
     }
   }
   if (working.length > 0) {
@@ -311,10 +311,12 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-// 启动：初始化代理池，然后启动 HTTP 服务
-(async () => {
-  await initProxyPool();
-  server.listen(PORT, '127.0.0.1', () => {
-    console.log(`[B站代理] 运行在 http://127.0.0.1:${PORT}，代理池 ${proxyPool.length} 个`);
+// 启动：先启动服务，后台初始化代理池
+server.listen(PORT, '127.0.0.1', () => {
+  console.log(`[B站代理] 运行在 http://127.0.0.1:${PORT}`);
+  initProxyPool().then(() => {
+    console.log(`[代理] 初始化完成，${proxyPool.length} 个可用`);
+  }).catch(err => {
+    console.log('[代理] 初始化失败，将使用直连:', err.message);
   });
-})();
+});
