@@ -182,7 +182,7 @@ const server = http.createServer(async (req, res) => {
       await sleep(800 + Math.random() * 1200);
       const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
       const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`);
+      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 3).catch(() => null);
 
       res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch }));
     } else {
