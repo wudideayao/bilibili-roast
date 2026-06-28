@@ -489,19 +489,26 @@ const API = {
 };
 
 async function fetchBilibiliData(uid) {
-  const [infoRes, statRes, videoRes] = await Promise.all([
+  const [infoRes, statRes] = await Promise.all([
     fetch(API.userInfo(uid)).then(r => r.json()),
     fetch(API.upstat(uid)).then(r => r.json()),
-    fetch(API.videoCount(uid)).then(r => r.json()),
   ]);
 
   if (infoRes.code !== 0) {
     throw new Error(infoRes.message || '用户不存在，请检查UID');
   }
 
+  // arc/search 接口容易被风控，单独降级处理
+  let videoCount = 0;
+  try {
+    const videoRes = await fetch(API.videoCount(uid)).then(r => r.json());
+    if (videoRes.code === 0 && videoRes.data?.page?.count) {
+      videoCount = videoRes.data.page.count;
+    }
+  } catch (_) {}
+
   const info = infoRes.data;
   const stat = statRes.data || {};
-  const video = videoRes.data || {};
 
   return {
     uid: info.mid,
@@ -513,7 +520,7 @@ async function fetchBilibiliData(uid) {
     following: info.following || 0,
     totalViews: stat.archive?.view || 0,
     totalLikes: stat.likes || 0,
-    videoCount: video.page?.count || 0,
+    videoCount,
   };
 }
 
