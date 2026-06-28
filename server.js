@@ -1,4 +1,4 @@
-const http = require('http');
+﻿const http = require('http');
 const https = require('https');
 const crypto = require('crypto');
 const fs = require('fs');
@@ -249,13 +249,17 @@ const server = http.createServer(async (req, res) => {
       const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`, 4);
       const rawRelation = await biliFetch(`/x/relation/stat?vmid=${mid}`, 2).catch(() => null);
       const rawUpstat = USER_COOKIE ? await biliFetch(`/x/space/upstat?mid=${mid}`, 2).catch(() => null) : null;
-      const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
-      const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
-      const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 5).catch(() => null);
+      // 搜索接口（先试无 WBI，被限流了再试有 WBI）
+      let rawSearch = await biliFetch(`/x/space/arc/search?mid=${mid}&ps=1&pn=1`, 1).catch(() => null);
+      if (!rawSearch || rawSearch.code === -412) {
+        const sp = await wbiSign({ mid, ps: 1, pn: 1 });
+        const sq = Object.entries(sp).map(function(e) { return e[0] + '=' + encodeURIComponent(String(e[1])); }).join('&');
+        rawSearch = await biliFetch('/x/space/arc/search?' + sq, 3).catch(function() { return null; });
+      }
 
-      setCache(cacheKey, { info: rawInfo, search: rawSearch, relation: rawRelation, upstat: rawUpstat });
+      setCache(cacheKey, { info: rawInfo, relation: rawRelation, upstat: rawUpstat });
 
-      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch, relation: rawRelation, upstat: rawUpstat }));
+      res.end(JSON.stringify({ code: 0, info: rawInfo, relation: rawRelation, upstat: rawUpstat }));
     } else if (path === '/api/roast' && req.method === 'POST') {
       let body = '';
       req.on('data', function(c) { body += c; });
