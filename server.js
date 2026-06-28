@@ -47,8 +47,7 @@ async function getWbiKeys() {
   if (wbiFetching) return new Promise(r => wbiQueue.push(r));
   wbiFetching = true;
   try {
-    // 获取密钥前先随机延迟，降低被识别风险
-    await sleep(500 + Math.random() * 1500);
+    await sleep(200 + Math.random() * 800);
     const data = await biliFetch('/x/web-interface/nav');
     const img = data.data?.wbi_img;
     if (!img) throw new Error('获取WBI密钥失败');
@@ -88,7 +87,7 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-// ========== 请求队列：序列化所有 B 站请求，间隔至少 3 秒 ==========
+// ========== 请求队列：序列化B站请求，间隔至少 1 秒 ==========
 const requestQueue = [];
 let processing = false;
 
@@ -98,33 +97,32 @@ async function processQueue() {
   while (requestQueue.length > 0) {
     const { path, retries, resolve, reject } = requestQueue.shift();
     let result = null;
+    let lastErr = null;
     for (let attempt = 0; attempt < retries; attempt++) {
       try {
         result = await biliFetchOnce(path);
         if (result && result.code === -799) {
-          const wait = 5000 * (attempt + 1) + Math.random() * 5000;
+          const wait = 2000 * (attempt + 1) + Math.random() * 1000;
           await sleep(wait);
           continue;
         }
+        lastErr = null;
         break;
       } catch (e) {
+        lastErr = e;
         if (attempt < retries - 1) {
-          await sleep(3000 + Math.random() * 3000);
-        } else {
-          reject(e);
-          processing = false;
-          return;
+          await sleep(1000 + Math.random() * 1000);
         }
       }
     }
+    if (lastErr) { reject(lastErr); processing = false; return; }
     resolve(result);
-    // 每个请求之间至少间隔 3 秒
-    if (requestQueue.length > 0) await sleep(3000 + Math.random() * 2000);
+    if (requestQueue.length > 0) await sleep(1000 + Math.random() * 1000);
   }
   processing = false;
 }
 
-function biliFetch(path, retries = 3) {
+function biliFetch(path, retries = 2) {
   return new Promise((resolve, reject) => {
     requestQueue.push({ path, retries, resolve, reject });
     processQueue();
@@ -181,7 +179,7 @@ const server = http.createServer(async (req, res) => {
 
       const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`);
       // 延迟后再请求视频数
-      await sleep(1500 + Math.random() * 2000);
+      await sleep(800 + Math.random() * 1200);
       const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
       const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
       const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`);
