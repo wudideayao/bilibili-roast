@@ -22,12 +22,11 @@ function randStr(len) {
 let proxyPool = [];
 let proxyIdx = 0;
 
-// 多个免费代理源
+// 多个免费代理源（国内可访问 + 国际）
 const PROXY_SOURCES = [
-  'https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=5000&country=all&ssl=all&anonymity=all',
   'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt',
   'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt',
-  'https://raw.githubusercontent.com/roosterkid/openproxylist/main/HTTPS_RAW.txt',
+  'http://api.89ip.cn/tqdl.html?num=60&protocol=http',
 ];
 
 async function fetchProxies() {
@@ -35,15 +34,17 @@ async function fetchProxies() {
   for (const url of PROXY_SOURCES) {
     try {
       const data = await new Promise((resolve) => {
-        https.get(url, { timeout: 8000 }, res => {
+        const mod = url.startsWith('https') ? https : http;
+        mod.get(url, { timeout: 8000 }, res => {
           let d = '';
           res.on('data', c => d += c);
           res.on('end', () => resolve(d));
         }).on('error', () => resolve(''));
       });
       data.trim().split('\n').filter(Boolean).forEach(line => {
+        // 支持 IP:PORT 和 IP:PORT:user:pass 格式
         const parts = line.trim().split(':');
-        if (parts.length === 2) all.add(line.trim());
+        if (parts.length >= 2) all.add(`${parts[0]}:${parts[1]}`);
       });
     } catch (_) {}
   }
@@ -55,13 +56,13 @@ async function fetchProxies() {
   return arr;
 }
 
-// 测试代理是否可用
-async function testProxy(proxy) {
+// 测试代理是否可用（带超时）
+function testProxy(proxy, timeout = 3000) {
   return new Promise(resolve => {
     const req = http.request({
       hostname: proxy.host, port: proxy.port,
       method: 'CONNECT', path: 'www.baidu.com:443',
-      timeout: 3000,
+      timeout,
     });
     req.on('connect', () => { req.destroy(); resolve(true); });
     req.on('error', () => resolve(false));
@@ -70,17 +71,23 @@ async function testProxy(proxy) {
   });
 }
 
-// 初始化代理池
+// 初始化代理池（并行测试，大幅提速）
 async function initProxyPool() {
   const all = await fetchProxies();
-  // 测试前 30 个，找到 5 个可用即可
+  const toTest = all.slice(0, 60);
+  if (toTest.length === 0) {
+    console.log('[代理] 无代理可测试');
+    return;
+  }
+  // 并发测试，每批 15 个
   const working = [];
-  const toTest = all.slice(0, 30);
-  for (const p of toTest) {
-    if (await testProxy(p)) {
-      working.push(p);
-      if (working.length >= 5) break;
-    }
+  for (let i = 0; i < toTest.length; i += 15) {
+    const batch = toTest.slice(i, i + 15);
+    const results = await Promise.all(batch.map(p => testProxy(p)));
+    batch.forEach((p, idx) => {
+      if (results[idx]) working.push(p);
+    });
+    if (working.length >= 5) break;
   }
   if (working.length > 0) {
     proxyPool = working;
