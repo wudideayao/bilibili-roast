@@ -24,35 +24,39 @@ let proxyIdx = 0;
 
 // 多个免费代理源（国内可访问 + 国际）
 const PROXY_SOURCES = [
-  'https://raw.githubusercontent.com/TheSpeedX/SOCKS-List/master/http.txt',
-  'https://raw.githubusercontent.com/ShiftyTR/Proxy-List/master/http.txt',
   'http://api.89ip.cn/tqdl.html?num=60&protocol=http',
+  'http://api.89ip.cn/tqdl.html?num=60&protocol=https',
 ];
 
 async function fetchProxies() {
   const all = new Set();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
+
   for (const url of PROXY_SOURCES) {
     try {
       const data = await new Promise((resolve) => {
         const mod = url.startsWith('https') ? https : http;
-        mod.get(url, { timeout: 8000 }, res => {
+        const req = mod.get(url, { signal: controller.signal }, res => {
           let d = '';
           res.on('data', c => d += c);
           res.on('end', () => resolve(d));
-        }).on('error', () => resolve(''));
+        });
+        req.on('error', () => resolve(''));
+        req.setTimeout(6000, () => { req.destroy(); resolve(''); });
       });
       data.trim().split('\n').filter(Boolean).forEach(line => {
-        // 支持 IP:PORT 和 IP:PORT:user:pass 格式
         const parts = line.trim().split(':');
         if (parts.length >= 2) all.add(`${parts[0]}:${parts[1]}`);
       });
     } catch (_) {}
   }
+  clearTimeout(timer);
   const arr = [...all].map(p => {
     const [host, port] = p.split(':');
     return { host, port: parseInt(port) };
   });
-  console.log(`[代理] 获取到 ${arr.length} 个代理，开始连通性测试...`);
+  console.log(`[代理] 获取到 ${arr.length} 个代理`);
   return arr;
 }
 
@@ -79,15 +83,15 @@ async function initProxyPool() {
     console.log('[代理] 无代理可测试');
     return;
   }
-  // 并发测试，每批 15 个
+  console.log(`[代理] 测试 ${Math.min(toTest.length, 60)} 个代理连通性...`);
+  // 并发测试，每批 20 个
   const working = [];
-  for (let i = 0; i < toTest.length; i += 15) {
-    const batch = toTest.slice(i, i + 15);
-    const results = await Promise.all(batch.map(p => testProxy(p)));
+  for (let i = 0; i < toTest.length && working.length < 5; i += 20) {
+    const batch = toTest.slice(i, i + 20);
+    const results = await Promise.all(batch.map(p => testProxy(p, 3000)));
     batch.forEach((p, idx) => {
       if (results[idx]) working.push(p);
     });
-    if (working.length >= 5) break;
   }
   if (working.length > 0) {
     proxyPool = working;
