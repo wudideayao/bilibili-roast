@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抖音锐评 — 你的账号被怼了</title>
+<meta name="description" content="输入你的抖音号，AI 帮你毒舌鉴定">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+
+:root {
+  --pink: #FF0050;
+  --cyan: #00F2EA;
+  --black: #0a0a0a;
+  --white: #f5f3ef;
+  --gray: #2a2a2a;
+  --yellow: #FFD700;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+  background: var(--white);
+  color: var(--black);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* === NAV === */
+nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 3px solid var(--black);
+  background: var(--white);
+  position: relative;
+  z-index: 10;
+}
+.logo {
+  font-size: 24px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.logo-badge {
+  background: var(--black);
+  color: var(--white);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 1px;
+}
+
+/* === HERO === */
+.hero {
+  padding: 80px 24px 60px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 140%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 50%, var(--pink) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 50%, var(--cyan) 0%, transparent 60%);
+  opacity: 0.08;
+  pointer-events: none;
+}
+.hero h1 {
+  font-size: clamp(64px, 15vw, 140px);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -4px;
+  position: relative;
+}
+.hero h1 .highlight {
+  background: var(--black);
+  color: var(--white);
+  padding: 0 16px;
+  display: inline-block;
+  transform: rotate(-1deg);
+}
+.hero p {
+  font-size: 20px;
+  margin-top: 24px;
+  color: var(--gray);
+  font-weight: 400;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* === STICKER DECOR === */
+.sticker {
+  position: absolute;
+  font-weight: 900;
+  padding: 4px 14px;
+  transform: rotate(-6deg);
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 1;
+}
+.sticker-1 { top: 20px; right: 5%; background: var(--yellow); color: var(--black); transform: rotate(8deg); }
+.sticker-2 { bottom: 10px; left: 5%; background: var(--pink); color: white; transform: rotate(-4deg); }
+
+/* === INPUT SECTION === */
+.input-section {
+  max-width: 560px;
+  margin: 0 auto 60px;
+  padding: 0 24px;
+}
+.input-wrap {
+  display: flex;
+  gap: 0;
+  border: 3px solid var(--black);
+  background: var(--white);
+  box-shadow: 8px 8px 0 var(--black);
+  transition: box-shadow 0.2s;
+}
+.input-wrap:focus-within {
+  box-shadow: 12px 12px 0 var(--pink);
+}
+.input-wrap input {
+  flex: 1;
+  border: none;
+  padding: 18px 20px;
+  font-size: 18px;
+  font-family: inherit;
+  background: transparent;
+  outline: none;
+  color: var(--black);
+}
+.input-wrap input::placeholder {
+  color: #999;
+}
+.input-wrap button {
+  background: var(--black);
+  color: var(--white);
+  border: none;
+  padding: 18px 32px;
+  font-size: 16px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.input-wrap button:hover {
+  background: var(--pink);
+}
+.input-wrap button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.input-hint {
+  margin-top: 12px;
+  font-size: 13px;
+  color: #888;
+  text-align: center;
+}
+
+/* === LOADING === */
+.loading {
+  display: none;
+  max-width: 480px;
+  margin: 0 auto 60px;
+  padding: 0 24px;
+  text-align: center;
+}
+.loading.active { display: block; }
+.loading-bar {
+  width: 100%;
+  height: 6px;
+  background: #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.loading-bar-inner {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pink), var(--cyan));
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.loading-text {
+  font-size: 14px;
+  color: var(--gray);
+  animation: pulse 1.2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* === RESULT === */
+.result {
+  display: none;
+  max-width: 640px;
+  margin: 0 auto 60px;
+  padding: 0 24px;
+}
+.result.active { display: block; }
+
+.result-card {
+  border: 3px solid var(--black);
+  background: var(--white);
+  box-shadow: 10px 10px 0 var(--black);
+  overflow: hidden;
+}
+
+/* Result Header */
+.result-header {
+  background: var(--black);
+  color: var(--white);
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.result-header .username {
+  font-size: 18px;
+  font-weight: 700;
+}
+.result-header .badge {
+  font-size: 36px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Result Body */
+.result-body {
+  padding: 32px 24px;
+}
+.roast-text {
+  font-size: 22px;
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-weight: 700;
+}
+.roast-detail {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--gray);
+  padding: 16px;
+  background: #f0eeea;
+  border-left: 4px solid var(--pink);
+  margin-bottom: 24px;
+}
+
+/* Stats Grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-item {
+  border: 2px solid var(--black);
+  padding: 14px;
+  text-align: center;
+}
+.stat-item .stat-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.stat-item .stat-value {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/* Tags */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+.tag {
+  border: 2px solid var(--black);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.tag.pink { background: var(--pink); color: white; border-color: var(--pink); }
+.tag.cyan { background: var(--cyan); color: var(--black); border-color: var(--cyan); }
+.tag.yellow { background: var(--yellow); color: var(--black); border-color: var(--yellow); }
+
+/* Actions */
+.result-actions {
+  display: flex;
+  gap: 12px;
+}
+.result-actions button {
+  flex: 1;
+  padding: 14px;
+  border: 3px solid var(--black);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  background: var(--white);
+  transition: all 0.15s;
+}
+.result-actions button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--black);
+}
+.result-actions .btn-primary {
+  background: var(--black);
+  color: var(--white);
+}
+.result-actions .btn-primary:hover {
+  background: var(--pink);
+  border-color: var(--pink);
+  box-shadow: 4px 4px 0 var(--pink);
+}
+
+/* === FOOTER === */
+footer {
+  text-align: center;
+  padding: 32px 24px;
+  border-top: 3px solid var(--black);
+  font-size: 13px;
+  color: #888;
+}
+footer a {
+  color: var(--black);
+  font-weight: 700;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 480px) {
+  .input-wrap { flex-direction: column; }
+  .input-wrap button { padding: 14px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { letter-spacing: -2px; }
+}
+
+/* === FLOATING ELEMS === */
+.floating {
+  position: fixed;
+  pointer-events: none;
+  font-size: 40px;
+  opacity: 0.04;
+  font-weight: 900;
+  z-index: 0;
+}
+.floating-1 { top: 15%; left: 3%; font-size: 80px; transform: rotate(-15deg); }
+.floating-2 { bottom: 20%; right: 3%; font-size: 100px; transform: rotate(10deg); }
+.floating-3 { top: 50%; left: 50%; font-size: 60px; transform: translate(-50%, -50%) rotate(-5deg); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--white); }
+::-webkit-scrollbar-thumb { background: var(--black); }
+
+/* share toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--black);
+  color: var(--white);
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 100;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+</style>
+</head>
+<body>
+
+<div class="floating floating-1">锐</div>
+<div class="floating floating-2">评</div>
+<div class="floating floating-3">怼</div>
+
+<nav>
+  <div class="logo">
+    抖音锐评
+    <span class="logo-badge">毒舌版</span>
+  </div>
+  <div style="font-size:14px;font-weight:700;cursor:pointer" onclick="window.location.reload()">↻ 新鉴定</div>
+</nav>
+
+<section class="hero">
+  <span class="sticker sticker-1">🔥 看热闹不嫌事大</span>
+  <span class="sticker sticker-2">💀 毒舌预警</span>
+  <h1>
+    抖音<br>
+    <span class="highlight">锐评</span>
+  </h1>
+  <p>输入抖音号，AI 帮你毒舌鉴定账号含金量<br>（结果仅供娱乐，别当真 😈）</p>
+</section>
+
+<div class="input-section">
+  <div class="input-wrap">
+    <input type="text" id="dyInput" placeholder="输入抖音号 / 抖音ID..." maxlength="30" autocomplete="off">
+    <button id="roastBtn" onclick="startRoast()">开始鉴定</button>
+  </div>
+  <div class="input-hint">比如：dy123456、xiaohong、你的专属抖音号</div>
+</div>
+
+<div class="loading" id="loading">
+  <div class="loading-bar">
+    <div class="loading-bar-inner" id="loadingBar"></div>
+  </div>
+  <div class="loading-text" id="loadingText">正在分析账号数据...</div>
+</div>
+
+<div class="result" id="result">
+  <div class="result-card">
+    <div class="result-header">
+      <span class="username" id="resultUser">@username</span>
+      <span class="badge" id="resultBadge">F</span>
+    </div>
+    <div class="result-body">
+      <div class="roast-text" id="roastText"></div>
+      <div class="roast-detail" id="roastDetail"></div>
+
+      <div class="stats">
+        <div class="stat-item">
+          <div class="stat-label">毒舌指数</div>
+          <div class="stat-value" id="statRoast">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">搞笑程度</div>
+          <div class="stat-value" id="statFun">0</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">扎心指数</div>
+          <div class="stat-value" id="statHeart">0</div>
+        </div>
+      </div>
+
+      <div class="tags" id="tags"></div>
+
+      <div class="result-actions">
+        <button class="btn-primary" onclick="shareResult()">📤 分享到朋友圈</button>
+        <button onclick="startRoast()">↻ 再来一次</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  仅供娱乐 · 数据纯属虚构 · <a href="https://github.com/wudideayao/douyin-roast" target="_blank">GitHub</a>
+</footer>
+
+<script>
+const ROAST_TEMPLATES = [
+  {
+    grade: 'S',
+    title: '抖音之王 👑',
+    roasts: [
+      '你的账号是抖音的 VIP 中 P，算法见了都得叫声哥。',
+      '粉丝比你小区人口还多，建议直接开粉丝见面会收门票。',
+      '抖音服务器为你单独开了条光纤，怕你发视频卡顿。',
+    ],
+    details: [
+      '内容质量极高，每条视频都是爆款预定。运营水平堪比专业 MCN，建议考虑开班授课。',
+      '账号数据堪称恐怖，连竞品都在偷偷学习你的内容策略。',
+    ],
+    tags: ['🔥 顶流', '💎 优质创作者', '🏆 算法亲儿子'],
+    roastScore: 95, funScore: 80, heartScore: 30,
+  },
+  {
+    grade: 'A',
+    title: '优质创作者 ✨',
+    roasts: [
+      '不错嘛，粉丝数够在小区里横着走了。',
+      '你的内容还行，至少比隔壁老王拍的广场舞强十八条街。',
+      '抖音没给你流量？那是算法瞎了眼，不是你的问题。',
+    ],
+    details: [
+      '内容有一定的水准，但离爆款总差那么一口气。建议多蹭热点，少发自拍。',
+      '账号运营可圈可点，但更新频率像极了拖延症晚期患者。',
+    ],
+    tags: ['📈 潜力股', '🎯 内容还行', '⚡ 差一口气'],
+    roastScore: 80, funScore: 75, heartScore: 50,
+  },
+  {
+    grade: 'B',
+    title: '普通玩家 😐',
+    roasts: [
+      '粉丝数还不如你家楼下的煎饼果子摊的回头客多。',
+      '你的视频我看了，建议改行去写段子——虽然也不一定火。',
+      '点赞量还没你妈发的养生文章高，反思一下。',
+    ],
+    details: [
+      '内容属于看了就忘的类型。建议研究一下热门视频为什么火，而不是研究为什么没人看。',
+      '账号像一个安静的树洞——你发了视频，然后没有任何回音。',
+    ],
+    tags: ['🌱 需要努力', '💤 催眠大师', '📉 数据惨淡'],
+    roastScore: 65, funScore: 65, heartScore: 65,
+  },
+  {
+    grade: 'C',
+    title: '佛系玩家 🥬',
+    roasts: [
+      '你的账号像极了被遗忘的QQ空间——偶尔更新，从未走红。',
+      '抖音给你的推荐量，大概相当于你妈给你介绍的相亲对象数量——接近于零。',
+      '别灰心，你至少还有几个僵尸粉在默默守护你。',
+    ],
+    details: [
+      '更新频率堪比流星雨——一年一次，一次几秒。建议要么认真做，要么卸载抖音。',
+      '视频内容像白开水——健康但无味。加点料吧兄弟。',
+    ],
+    tags: ['🐌 龟速更新', '💀 僵尸粉大户', '❄️ 冷宫账号'],
+    roastScore: 45, funScore: 55, heartScore: 80,
+  },
+  {
+    grade: 'D',
+    title: '已被算法抛弃 💀',
+    roasts: [
+      '抖音算法可能不认识你。建议你重新注册一个号，也许还有救。',
+      '你的视频播放量，用手指头加脚指头都数得过来。',
+      '连营销号都不屑于搬运你的内容，你自己品。',
+    ],
+    details: [
+      '建议检查一下是不是被限流了。如果没有——那可能单纯就是内容不行。',
+      '你的账号像抖音里的鬼城——建筑物齐全，但空无一人。',
+    ],
+    tags: ['🚫 限流警告', '📊 数据灾难', '🪦 已放弃治疗'],
+    roastScore: 30, funScore: 40, heartScore: 90,
+  },
+  {
+    grade: 'F',
+    title: '建议注销 🔥',
+    roasts: [
+      '你这个账号活着浪费服务器资源，建议趁早注销为地球减负。',
+      '抖音看到你的账号都哭了——浪费时间又浪费存储空间。',
+      '你确定你发的是视频而不是电子垃圾？',
+    ],
+    details: [
+      '无论是内容还是运营，都堪称灾难级别。建议从头学起，或者换个平台试试。',
+      '你的账号成功证明了：不是每个人都能做自媒体的。',
+    ],
+    tags: ['💣 内容灾难', '🤦 没眼看', '🗑️ 建议删除'],
+    roastScore: 15, funScore: 30, heartScore: 98,
+  },
+];
+
+const LOADING_TEXTS = [
+  '正在扫描你的账号...',
+  '分析粉丝成分中...',
+  '评估内容质量...',
+  '计算尴尬指数...',
+  '跟算法激烈讨论中...',
+  '翻看你黑历史...',
+  '询问AI毒舌模式...',
+  '准备扎心台词...',
+];
+
+function randomFrom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  return Math.abs(hash);
+}
+
+function pickTemplate(input) {
+  const h = hashCode(input + 'salt');
+  const idx = h % ROAST_TEMPLATES.length;
+  // pick a different one each time with some randomness
+  const realIdx = Math.floor(Math.random() * ROAST_TEMPLATES.length);
+  return ROAST_TEMPLATES[realIdx];
+}
+
+function analyzeUsername(name) {
+  const features = {};
+  features.hasNumber = /\d/.test(name);
+  features.hasChinese = /[一-鿿]/.test(name);
+  features.hasUnderscore = /_/.test(name);
+  features.length = name.length;
+  features.onlyLetters = /^[a-zA-Z]+$/.test(name);
+  features.looksGenerated = /^(user|dy|douyin|抖音|xiaohongshu|test|admin|temp|new)\d{4,}$/i.test(name);
+  features.hasEmoji = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/u.test(name);
+  return features;
+}
+
+function generateRoast(input) {
+  const templ = pickTemplate(input);
+  const features = analyzeUsername(input);
+  let roast = randomFrom(templ.roasts);
+  let detail = randomFrom(templ.details);
+
+  // Customize based on features
+  if (features.looksGenerated) {
+    const genRoasts = [
+      '你这个号一看就是系统自动生成的，连名字都懒得改，懒到极致了属于是。',
+      '用这种默认ID的人，不是机器人就是懒得取名的狠人。',
+      'dy开头+一串数字？你是抖音批发来的账号吗？',
+    ];
+    roast = randomFrom(genRoasts);
+  }
+  if (features.hasUnderscore && Math.random() > 0.5) {
+    const usRoasts = [
+      '下划线这么多，你是在给变量命名吗？',
+      '一个名字里塞三个下划线，你是怕别人记住你吗？',
+    ];
+    roast = randomFrom(usRoasts);
+  }
+  if (features.hasEmoji) {
+    const emRoasts = [
+      '名字里带 emoji 的人，十个有九个是营销号，你是那个吗？',
+      'emoji 叠 buff 是吧？建议改名直接叫「火火火🔥」',
+    ];
+    roast = randomFrom(emRoasts);
+  }
+  if (features.length <= 3) {
+    const shortRoasts = [
+      '名字这么短，是怕别人打对你的ID吗？',
+      '三个字符的ID，一看就是元老级玩家，然而粉丝数并没有跟上资历。',
+    ];
+    roast = randomFrom(shortRoasts);
+  }
+
+  // Generate dynamic tags
+  const extraTags = [];
+  if (features.hasNumber) extraTags.push('#️⃣ 带数字');
+  if (features.hasChinese) extraTags.push('🀄 中文ID');
+  if (features.looksGenerated) extraTags.push('🤖 默认名');
+  if (features.length > 10) extraTags.push('📏 名字太长');
+  if (features.onlyLetters) extraTags.push('🔤 纯英文');
+
+  const allTags = [...templ.tags, ...extraTags].slice(0, 5);
+
+  return {
+    grade: templ.grade,
+    title: templ.title,
+    roast,
+    detail,
+    tags: allTags,
+    roastScore: templ.roastScore + Math.floor(Math.random() * 6) - 3,
+    funScore: templ.funScore + Math.floor(Math.random() * 6) - 3,
+    heartScore: templ.heartScore + Math.floor(Math.random() * 6) - 3,
+  };
+}
+
+function startRoast() {
+  const input = document.getElementById('dyInput').value.trim();
+  if (!input) {
+    document.getElementById('dyInput').focus();
+    showToast('请输入抖音号或抖音ID！');
+    return;
+  }
+
+  document.getElementById('roastBtn').disabled = true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('result').classList.remove('active');
+
+  // Loading animation
+  const bar = document.getElementById('loadingBar');
+  const loadingText = document.getElementById('loadingText');
+  let progress = 0;
+  let textIdx = 0;
+
+  const textInterval = setInterval(() => {
+    textIdx = (textIdx + 1) % LOADING_TEXTS.length;
+    loadingText.textContent = LOADING_TEXTS[textIdx];
+  }, 600);
+
+  const progressInterval = setInterval(() => {
+    progress += Math.random() * 15 + 5;
+    if (progress > 95) progress = 95;
+    bar.style.width = progress + '%';
+  }, 200);
+
+  // Generate result after delay
+  setTimeout(() => {
+    clearInterval(textInterval);
+    clearInterval(progressInterval);
+    bar.style.width = '100%';
+
+    setTimeout(() => {
+      const result = generateRoast(input);
+      displayResult(input, result);
+      document.getElementById('loading').classList.remove('active');
+      document.getElementById('result').classList.add('active');
+      document.getElementById('roastBtn').disabled = false;
+      document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 400);
+  }, 2000 + Math.random() * 1000);
+}
+
+function displayResult(input, result) {
+  document.getElementById('resultUser').textContent = '@' + input;
+  document.getElementById('resultBadge').textContent = result.grade;
+  document.getElementById('roastText').textContent = result.roast;
+  document.getElementById('roastDetail').textContent = result.detail;
+  document.getElementById('statRoast').textContent = result.roastScore;
+  document.getElementById('statFun').textContent = result.funScore;
+  document.getElementById('statHeart').textContent = result.heartScore;
+
+  // Badge color
+  const badge = document.getElementById('resultBadge');
+  const gradeColors = {
+    S: '#FFD700', A: '#00F2EA', B: '#999',
+    C: '#FF8C00', D: '#FF0050', F: '#000',
+  };
+  badge.style.color = gradeColors[result.grade] || '#000';
+
+  // Tags
+  const tagsContainer = document.getElementById('tags');
+  tagsContainer.innerHTML = '';
+  result.tags.forEach((tag, i) => {
+    const span = document.createElement('span');
+    span.className = 'tag ' + (['pink', 'cyan', 'yellow', '', ''][i % 5]);
+    span.textContent = tag;
+    tagsContainer.appendChild(span);
+  });
+}
+
+function shareResult() {
+  const input = document.getElementById('dyInput').value.trim();
+  const grade = document.getElementById('resultBadge').textContent;
+  const roast = document.getElementById('roastText').textContent;
+
+  if (navigator.share) {
+    navigator.share({
+      title: '抖音锐评',
+      text: `我的抖音账号「${input}」被锐评了！等级：${grade}\n${roast}\n\n你也来试试 👉 douyin-roast.vercel.app`,
+    }).catch(() => {});
+  } else {
+    const text = `我的抖音账号「${input}」被锐评了！等级：${grade}\n${roast}`;
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('已复制到剪贴板，快去分享吧！');
+    }).catch(() => {
+      showToast('复制失败，请手动复制');
+    });
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Enter to submit
+document.getElementById('dyInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') startRoast();
+});
+
+// Random placeholder
+const PLACEHOLDERS = ['你的抖音号...', 'dy123456...', '输入账号开始被怼...', '不怕死就来...'];
+let phIdx = 0;
+setInterval(() => {
+  phIdx = (phIdx + 1) % PLACEHOLDERS.length;
+  document.getElementById('dyInput').placeholder = PLACEHOLDERS[phIdx];
+}, 2500);
+</script>
+</body>
+</html>
