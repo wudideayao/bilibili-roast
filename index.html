@@ -3,60 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>抖音锐评 — 你的账号被怼了</title>
-<meta name="description" content="输入你的抖音号，AI 帮你毒舌鉴定">
+<title>B站锐评 — 你的UP主账号被怼了</title>
+<meta name="description" content="输入B站UID，毒舌鉴定你的UP主账号含金量">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
 
 :root {
-  --pink: #FF0050;
-  --cyan: #00F2EA;
-  --black: #0a0a0a;
-  --white: #f5f3ef;
-  --gray: #2a2a2a;
+  --pink: #FB7299;
+  --blue: #00A1D6;
+  --black: #1a1a1a;
+  --white: #f6f6f6;
+  --gray: #444;
   --yellow: #FFD700;
+  --bg: #f0eef6;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Noto Sans SC', sans-serif;
-  background: var(--white);
+  background: var(--bg);
   color: var(--black);
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-/* === NAV === */
 nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 3px solid var(--black);
+  padding: 14px 24px;
   background: var(--white);
+  border-bottom: 3px solid var(--black);
   position: relative;
   z-index: 10;
 }
 .logo {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 900;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .logo-badge {
-  background: var(--black);
-  color: var(--white);
+  background: var(--pink);
+  color: white;
   font-size: 10px;
   padding: 2px 8px;
   border-radius: 20px;
   letter-spacing: 1px;
 }
 
-/* === HERO === */
 .hero {
-  padding: 80px 24px 60px;
+  padding: 60px 24px 40px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -64,56 +63,54 @@ nav {
 .hero::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -20%;
-  width: 140%;
-  height: 200%;
-  background: radial-gradient(ellipse at 30% 50%, var(--pink) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 50%, var(--cyan) 0%, transparent 60%);
-  opacity: 0.08;
+  top: -30%;
+  left: -10%;
+  width: 120%;
+  height: 160%;
+  background:
+    radial-gradient(ellipse at 25% 50%, var(--pink) 0%, transparent 50%),
+    radial-gradient(ellipse at 75% 50%, var(--blue) 0%, transparent 50%);
+  opacity: 0.1;
   pointer-events: none;
 }
 .hero h1 {
-  font-size: clamp(64px, 15vw, 140px);
+  font-size: clamp(56px, 14vw, 120px);
   font-weight: 900;
   line-height: 0.9;
-  letter-spacing: -4px;
-  position: relative;
+  letter-spacing: -3px;
 }
 .hero h1 .highlight {
   background: var(--black);
   color: var(--white);
-  padding: 0 16px;
+  padding: 0 14px;
   display: inline-block;
-  transform: rotate(-1deg);
+  transform: rotate(-1.5deg);
 }
 .hero p {
-  font-size: 20px;
-  margin-top: 24px;
+  font-size: 16px;
+  margin-top: 18px;
   color: var(--gray);
-  font-weight: 400;
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
+  line-height: 1.6;
 }
 
-/* === STICKER DECOR === */
 .sticker {
   position: absolute;
   font-weight: 900;
   padding: 4px 14px;
   transform: rotate(-6deg);
-  font-size: 14px;
+  font-size: 13px;
   pointer-events: none;
   z-index: 1;
 }
-.sticker-1 { top: 20px; right: 5%; background: var(--yellow); color: var(--black); transform: rotate(8deg); }
-.sticker-2 { bottom: 10px; left: 5%; background: var(--pink); color: white; transform: rotate(-4deg); }
+.sticker-1 { top: 10px; right: 5%; background: var(--yellow); color: var(--black); transform: rotate(6deg); }
+.sticker-2 { bottom: 0; left: 5%; background: var(--pink); color: white; transform: rotate(-3deg); }
 
-/* === INPUT SECTION === */
 .input-section {
-  max-width: 560px;
-  margin: 0 auto 60px;
+  max-width: 520px;
+  margin: 0 auto 40px;
   padding: 0 24px;
 }
 .input-wrap {
@@ -125,52 +122,45 @@ nav {
   transition: box-shadow 0.2s;
 }
 .input-wrap:focus-within {
-  box-shadow: 12px 12px 0 var(--pink);
+  box-shadow: 8px 8px 0 var(--pink);
 }
 .input-wrap input {
   flex: 1;
   border: none;
-  padding: 18px 20px;
-  font-size: 18px;
+  padding: 16px 18px;
+  font-size: 16px;
   font-family: inherit;
   background: transparent;
   outline: none;
-  color: var(--black);
 }
-.input-wrap input::placeholder {
-  color: #999;
-}
+.input-wrap input::placeholder { color: #aaa; }
 .input-wrap button {
   background: var(--black);
-  color: var(--white);
+  color: white;
   border: none;
-  padding: 18px 32px;
-  font-size: 16px;
+  padding: 16px 28px;
+  font-size: 15px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
   white-space: nowrap;
 }
-.input-wrap button:hover {
-  background: var(--pink);
-}
-.input-wrap button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
+.input-wrap button:hover { background: var(--pink); }
+.input-wrap button:disabled { opacity: 0.4; cursor: not-allowed; }
 .input-hint {
-  margin-top: 12px;
-  font-size: 13px;
-  color: #888;
+  margin-top: 10px;
+  font-size: 12px;
+  color: #999;
   text-align: center;
 }
+.input-hint a { color: var(--blue); font-weight: 700; }
 
-/* === LOADING === */
+/* Loading */
 .loading {
   display: none;
   max-width: 480px;
-  margin: 0 auto 60px;
+  margin: 0 auto 40px;
   padding: 0 24px;
   text-align: center;
 }
@@ -181,12 +171,12 @@ nav {
   background: #ddd;
   border-radius: 3px;
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 .loading-bar-inner {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--pink), var(--cyan));
+  background: linear-gradient(90deg, var(--pink), var(--blue));
   border-radius: 3px;
   transition: width 0.3s;
 }
@@ -195,16 +185,31 @@ nav {
   color: var(--gray);
   animation: pulse 1.2s infinite;
 }
-@keyframes pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
+@keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-/* === RESULT === */
+/* Error */
+.error-box {
+  display: none;
+  max-width: 520px;
+  margin: 0 auto 40px;
+  padding: 0 24px;
+}
+.error-box.active { display: block; }
+.error-card {
+  border: 3px solid var(--pink);
+  background: var(--white);
+  padding: 20px 24px;
+  box-shadow: 6px 6px 0 var(--pink);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.error-card strong { color: var(--pink); }
+
+/* Result */
 .result {
   display: none;
-  max-width: 640px;
-  margin: 0 auto 60px;
+  max-width: 620px;
+  margin: 0 auto 40px;
   padding: 0 24px;
 }
 .result.active { display: block; }
@@ -215,102 +220,131 @@ nav {
   box-shadow: 10px 10px 0 var(--black);
   overflow: hidden;
 }
-
-/* Result Header */
 .result-header {
   background: var(--black);
-  color: var(--white);
-  padding: 20px 24px;
+  color: white;
+  padding: 18px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
 }
-.result-header .username {
-  font-size: 18px;
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid var(--pink);
+  flex-shrink: 0;
+  background: #eee;
+}
+.avatar img { width: 100%; height: 100%; border-radius: 50%; display: block; }
+.user-meta { min-width: 0; }
+.user-meta .uname {
+  font-size: 17px;
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.result-header .badge {
-  font-size: 36px;
+.user-meta .uid {
+  font-size: 12px;
+  color: #999;
+}
+.badge-grade {
+  font-size: 40px;
   font-weight: 900;
   line-height: 1;
+  flex-shrink: 0;
 }
 
-/* Result Body */
 .result-body {
-  padding: 32px 24px;
+  padding: 24px;
 }
 .roast-text {
-  font-size: 22px;
+  font-size: 20px;
   line-height: 1.6;
-  margin-bottom: 24px;
   font-weight: 700;
+  margin-bottom: 20px;
 }
 .roast-detail {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.8;
   color: var(--gray);
-  padding: 16px;
+  padding: 14px 18px;
   background: #f0eeea;
   border-left: 4px solid var(--pink);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
-/* Stats Grid */
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
-}
-.stat-item {
+/* Real data card */
+.data-card {
   border: 2px solid var(--black);
-  padding: 14px;
-  text-align: center;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: var(--white);
 }
-.stat-item .stat-label {
-  font-size: 11px;
+.data-card h3 {
+  font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #888;
-  margin-bottom: 4px;
+  color: #999;
+  margin-bottom: 10px;
 }
-.stat-item .stat-value {
-  font-size: 20px;
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.data-item {
+  text-align: center;
+  padding: 8px 4px;
+}
+.data-item .dv {
+  font-size: 18px;
   font-weight: 900;
 }
+.data-item .dl {
+  font-size: 10px;
+  color: #999;
+  margin-top: 2px;
+}
 
-/* Tags */
 .tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 24px;
+  gap: 6px;
+  margin-bottom: 18px;
 }
 .tag {
   border: 2px solid var(--black);
-  padding: 6px 14px;
-  font-size: 13px;
+  padding: 4px 12px;
+  font-size: 12px;
   font-weight: 700;
 }
 .tag.pink { background: var(--pink); color: white; border-color: var(--pink); }
-.tag.cyan { background: var(--cyan); color: var(--black); border-color: var(--cyan); }
+.tag.blue { background: var(--blue); color: white; border-color: var(--blue); }
 .tag.yellow { background: var(--yellow); color: var(--black); border-color: var(--yellow); }
 
-/* Actions */
 .result-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 .result-actions button {
   flex: 1;
-  padding: 14px;
+  padding: 12px;
   border: 3px solid var(--black);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   background: var(--white);
-  transition: all 0.15s;
+  transition: all 0.12s;
 }
 .result-actions button:hover {
   transform: translate(-2px, -2px);
@@ -318,144 +352,117 @@ nav {
 }
 .result-actions .btn-primary {
   background: var(--black);
-  color: var(--white);
+  color: white;
 }
 .result-actions .btn-primary:hover {
-  background: var(--pink);
-  border-color: var(--pink);
-  box-shadow: 4px 4px 0 var(--pink);
+  background: var(--blue);
+  border-color: var(--blue);
+  box-shadow: 4px 4px 0 var(--blue);
 }
 
-/* === FOOTER === */
 footer {
   text-align: center;
-  padding: 32px 24px;
+  padding: 24px;
   border-top: 3px solid var(--black);
-  font-size: 13px;
-  color: #888;
+  font-size: 12px;
+  color: #999;
 }
-footer a {
-  color: var(--black);
-  font-weight: 700;
-}
+footer a { color: var(--black); font-weight: 700; }
 
-/* === RESPONSIVE === */
-@media (max-width: 480px) {
-  .input-wrap { flex-direction: column; }
-  .input-wrap button { padding: 14px; }
-  .stats { grid-template-columns: repeat(2, 1fr); }
-  .hero h1 { letter-spacing: -2px; }
-}
-
-/* === FLOATING ELEMS === */
-.floating {
-  position: fixed;
-  pointer-events: none;
-  font-size: 40px;
-  opacity: 0.04;
-  font-weight: 900;
-  z-index: 0;
-}
-.floating-1 { top: 15%; left: 3%; font-size: 80px; transform: rotate(-15deg); }
-.floating-2 { bottom: 20%; right: 3%; font-size: 100px; transform: rotate(10deg); }
-.floating-3 { top: 50%; left: 50%; font-size: 60px; transform: translate(-50%, -50%) rotate(-5deg); }
-
-/* scrollbar */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--white); }
-::-webkit-scrollbar-thumb { background: var(--black); }
-
-/* share toast */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 20px;
   left: 50%;
-  transform: translateX(-50%) translateY(100px);
+  transform: translateX(-50%) translateY(80px);
   background: var(--black);
-  color: var(--white);
-  padding: 12px 24px;
-  font-size: 14px;
+  color: white;
+  padding: 10px 20px;
+  font-size: 13px;
   font-weight: 700;
   border-radius: 4px;
   opacity: 0;
   transition: all 0.3s;
   z-index: 100;
 }
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 480px) {
+  .input-wrap { flex-direction: column; }
+  .data-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero h1 { letter-spacing: -1px; }
+  .result-header { flex-wrap: wrap; }
 }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--black); }
 </style>
 </head>
 <body>
 
-<div class="floating floating-1">锐</div>
-<div class="floating floating-2">评</div>
-<div class="floating floating-3">怼</div>
-
 <nav>
   <div class="logo">
-    抖音锐评
+    B站锐评
     <span class="logo-badge">毒舌版</span>
   </div>
-  <div style="font-size:14px;font-weight:700;cursor:pointer" onclick="window.location.reload()">↻ 新鉴定</div>
+  <div style="font-size:13px;font-weight:700;cursor:pointer" onclick="location.reload()">↻ 重新鉴定</div>
 </nav>
 
 <section class="hero">
-  <span class="sticker sticker-1">🔥 看热闹不嫌事大</span>
-  <span class="sticker sticker-2">💀 毒舌预警</span>
+  <span class="sticker sticker-1">🔥 真实数据，扎心预警</span>
+  <span class="sticker sticker-2">💀 基于B站公开API</span>
   <h1>
-    抖音<br>
+    B站<br>
     <span class="highlight">锐评</span>
   </h1>
-  <p>输入抖音号，AI 帮你毒舌鉴定账号含金量<br>（结果仅供娱乐，别当真 😈）</p>
+  <p>输入 UP 主的 UID，基于真实数据毒舌鉴定<br>（数据来自B站公开API，结果仅供娱乐 😈）</p>
 </section>
 
 <div class="input-section">
   <div class="input-wrap">
-    <input type="text" id="dyInput" placeholder="输入抖音号 / 抖音ID..." maxlength="30" autocomplete="off">
+    <input type="text" id="uidInput" placeholder="输入B站UID..." maxlength="20" autocomplete="off">
     <button id="roastBtn" onclick="startRoast()">开始鉴定</button>
   </div>
-  <div class="input-hint">比如：dy123456、xiaohong、你的专属抖音号</div>
+  <div class="input-hint">UID 是纯数字，比如 <a href="#" onclick="fillExample('2');return false">2</a> · <a href="#" onclick="fillExample('3864480');return false">3864480</a> · <a href="#" onclick="fillExample('386849925');return false">386849925</a> · 在UP主主页URL就能找到</div>
 </div>
 
 <div class="loading" id="loading">
-  <div class="loading-bar">
-    <div class="loading-bar-inner" id="loadingBar"></div>
-  </div>
-  <div class="loading-text" id="loadingText">正在分析账号数据...</div>
+  <div class="loading-bar"><div class="loading-bar-inner" id="loadingBar"></div></div>
+  <div class="loading-text" id="loadingText">正在爬取B站数据...</div>
+</div>
+
+<div class="error-box" id="errorBox">
+  <div class="error-card" id="errorContent"></div>
 </div>
 
 <div class="result" id="result">
   <div class="result-card">
     <div class="result-header">
-      <span class="username" id="resultUser">@username</span>
-      <span class="badge" id="resultBadge">F</span>
+      <div class="header-left">
+        <div class="avatar" id="avatar"><img src="" alt="avatar"></div>
+        <div class="user-meta">
+          <div class="uname" id="uname">加载中</div>
+          <div class="uid" id="uidDisplay">UID: --</div>
+        </div>
+      </div>
+      <span class="badge-grade" id="resultBadge">?</span>
     </div>
     <div class="result-body">
       <div class="roast-text" id="roastText"></div>
       <div class="roast-detail" id="roastDetail"></div>
-
-      <div class="stats">
-        <div class="stat-item">
-          <div class="stat-label">毒舌指数</div>
-          <div class="stat-value" id="statRoast">0</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">搞笑程度</div>
-          <div class="stat-value" id="statFun">0</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-label">扎心指数</div>
-          <div class="stat-value" id="statHeart">0</div>
+      <div class="data-card">
+        <h3>📊 真实数据</h3>
+        <div class="data-grid">
+          <div class="data-item"><div class="dv" id="dFans">--</div><div class="dl">粉丝</div></div>
+          <div class="data-item"><div class="dv" id="dViews">--</div><div class="dl">总播放</div></div>
+          <div class="data-item"><div class="dv" id="dLikes">--</div><div class="dl">总点赞</div></div>
+          <div class="data-item"><div class="dv" id="dVideos">--</div><div class="dl">视频数</div></div>
         </div>
       </div>
-
       <div class="tags" id="tags"></div>
-
       <div class="result-actions">
-        <button class="btn-primary" onclick="shareResult()">📤 分享到朋友圈</button>
-        <button onclick="startRoast()">↻ 再来一次</button>
+        <button class="btn-primary" onclick="shareResult()">📤 分享</button>
+        <button onclick="startRoast()">↻ 重新鉴定</button>
       </div>
     </div>
   </div>
@@ -464,320 +471,269 @@ footer a {
 <div class="toast" id="toast"></div>
 
 <footer>
-  仅供娱乐 · 数据纯属虚构 · <a href="https://github.com/wudideayao/douyin-roast" target="_blank">GitHub</a>
+  数据来源：<a href="https://github.com/SocialSisterYi/bilibili-API-collect" target="_blank">B站公开API</a> · 仅供娱乐 · <a href="https://github.com/wudideayao/douyin-roast" target="_blank">GitHub</a>
 </footer>
 
 <script>
-const ROAST_TEMPLATES = [
-  {
-    grade: 'S',
-    title: '抖音之王 👑',
-    roasts: [
-      '你的账号是抖音的 VIP 中 P，算法见了都得叫声哥。',
-      '粉丝比你小区人口还多，建议直接开粉丝见面会收门票。',
-      '抖音服务器为你单独开了条光纤，怕你发视频卡顿。',
-    ],
-    details: [
-      '内容质量极高，每条视频都是爆款预定。运营水平堪比专业 MCN，建议考虑开班授课。',
-      '账号数据堪称恐怖，连竞品都在偷偷学习你的内容策略。',
-    ],
-    tags: ['🔥 顶流', '💎 优质创作者', '🏆 算法亲儿子'],
-    roastScore: 95, funScore: 80, heartScore: 30,
-  },
-  {
-    grade: 'A',
-    title: '优质创作者 ✨',
-    roasts: [
-      '不错嘛，粉丝数够在小区里横着走了。',
-      '你的内容还行，至少比隔壁老王拍的广场舞强十八条街。',
-      '抖音没给你流量？那是算法瞎了眼，不是你的问题。',
-    ],
-    details: [
-      '内容有一定的水准，但离爆款总差那么一口气。建议多蹭热点，少发自拍。',
-      '账号运营可圈可点，但更新频率像极了拖延症晚期患者。',
-    ],
-    tags: ['📈 潜力股', '🎯 内容还行', '⚡ 差一口气'],
-    roastScore: 80, funScore: 75, heartScore: 50,
-  },
-  {
-    grade: 'B',
-    title: '普通玩家 😐',
-    roasts: [
-      '粉丝数还不如你家楼下的煎饼果子摊的回头客多。',
-      '你的视频我看了，建议改行去写段子——虽然也不一定火。',
-      '点赞量还没你妈发的养生文章高，反思一下。',
-    ],
-    details: [
-      '内容属于看了就忘的类型。建议研究一下热门视频为什么火，而不是研究为什么没人看。',
-      '账号像一个安静的树洞——你发了视频，然后没有任何回音。',
-    ],
-    tags: ['🌱 需要努力', '💤 催眠大师', '📉 数据惨淡'],
-    roastScore: 65, funScore: 65, heartScore: 65,
-  },
-  {
-    grade: 'C',
-    title: '佛系玩家 🥬',
-    roasts: [
-      '你的账号像极了被遗忘的QQ空间——偶尔更新，从未走红。',
-      '抖音给你的推荐量，大概相当于你妈给你介绍的相亲对象数量——接近于零。',
-      '别灰心，你至少还有几个僵尸粉在默默守护你。',
-    ],
-    details: [
-      '更新频率堪比流星雨——一年一次，一次几秒。建议要么认真做，要么卸载抖音。',
-      '视频内容像白开水——健康但无味。加点料吧兄弟。',
-    ],
-    tags: ['🐌 龟速更新', '💀 僵尸粉大户', '❄️ 冷宫账号'],
-    roastScore: 45, funScore: 55, heartScore: 80,
-  },
-  {
-    grade: 'D',
-    title: '已被算法抛弃 💀',
-    roasts: [
-      '抖音算法可能不认识你。建议你重新注册一个号，也许还有救。',
-      '你的视频播放量，用手指头加脚指头都数得过来。',
-      '连营销号都不屑于搬运你的内容，你自己品。',
-    ],
-    details: [
-      '建议检查一下是不是被限流了。如果没有——那可能单纯就是内容不行。',
-      '你的账号像抖音里的鬼城——建筑物齐全，但空无一人。',
-    ],
-    tags: ['🚫 限流警告', '📊 数据灾难', '🪦 已放弃治疗'],
-    roastScore: 30, funScore: 40, heartScore: 90,
-  },
-  {
-    grade: 'F',
-    title: '建议注销 🔥',
-    roasts: [
-      '你这个账号活着浪费服务器资源，建议趁早注销为地球减负。',
-      '抖音看到你的账号都哭了——浪费时间又浪费存储空间。',
-      '你确定你发的是视频而不是电子垃圾？',
-    ],
-    details: [
-      '无论是内容还是运营，都堪称灾难级别。建议从头学起，或者换个平台试试。',
-      '你的账号成功证明了：不是每个人都能做自媒体的。',
-    ],
-    tags: ['💣 内容灾难', '🤦 没眼看', '🗑️ 建议删除'],
-    roastScore: 15, funScore: 30, heartScore: 98,
-  },
-];
+// ========== API ==========
+const API = {
+  userInfo: uid => `https://api.bilibili.com/x/space/acc/info?mid=${uid}`,
+  upstat: uid => `https://api.bilibili.com/x/space/upstat?mid=${uid}`,
+  videoCount: uid => `https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=1&pn=1`,
+};
 
-const LOADING_TEXTS = [
-  '正在扫描你的账号...',
-  '分析粉丝成分中...',
-  '评估内容质量...',
-  '计算尴尬指数...',
-  '跟算法激烈讨论中...',
-  '翻看你黑历史...',
-  '询问AI毒舌模式...',
-  '准备扎心台词...',
-];
+async function fetchBilibiliData(uid) {
+  const [infoRes, statRes, videoRes] = await Promise.all([
+    fetch(API.userInfo(uid)).then(r => r.json()),
+    fetch(API.upstat(uid)).then(r => r.json()),
+    fetch(API.videoCount(uid)).then(r => r.json()),
+  ]);
 
-function randomFrom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
-
-function hashCode(str) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const c = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + c;
-    hash |= 0;
-  }
-  return Math.abs(hash);
-}
-
-function pickTemplate(input) {
-  const h = hashCode(input + 'salt');
-  const idx = h % ROAST_TEMPLATES.length;
-  // pick a different one each time with some randomness
-  const realIdx = Math.floor(Math.random() * ROAST_TEMPLATES.length);
-  return ROAST_TEMPLATES[realIdx];
-}
-
-function analyzeUsername(name) {
-  const features = {};
-  features.hasNumber = /\d/.test(name);
-  features.hasChinese = /[一-鿿]/.test(name);
-  features.hasUnderscore = /_/.test(name);
-  features.length = name.length;
-  features.onlyLetters = /^[a-zA-Z]+$/.test(name);
-  features.looksGenerated = /^(user|dy|douyin|抖音|xiaohongshu|test|admin|temp|new)\d{4,}$/i.test(name);
-  features.hasEmoji = /[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}]/u.test(name);
-  return features;
-}
-
-function generateRoast(input) {
-  const templ = pickTemplate(input);
-  const features = analyzeUsername(input);
-  let roast = randomFrom(templ.roasts);
-  let detail = randomFrom(templ.details);
-
-  // Customize based on features
-  if (features.looksGenerated) {
-    const genRoasts = [
-      '你这个号一看就是系统自动生成的，连名字都懒得改，懒到极致了属于是。',
-      '用这种默认ID的人，不是机器人就是懒得取名的狠人。',
-      'dy开头+一串数字？你是抖音批发来的账号吗？',
-    ];
-    roast = randomFrom(genRoasts);
-  }
-  if (features.hasUnderscore && Math.random() > 0.5) {
-    const usRoasts = [
-      '下划线这么多，你是在给变量命名吗？',
-      '一个名字里塞三个下划线，你是怕别人记住你吗？',
-    ];
-    roast = randomFrom(usRoasts);
-  }
-  if (features.hasEmoji) {
-    const emRoasts = [
-      '名字里带 emoji 的人，十个有九个是营销号，你是那个吗？',
-      'emoji 叠 buff 是吧？建议改名直接叫「火火火🔥」',
-    ];
-    roast = randomFrom(emRoasts);
-  }
-  if (features.length <= 3) {
-    const shortRoasts = [
-      '名字这么短，是怕别人打对你的ID吗？',
-      '三个字符的ID，一看就是元老级玩家，然而粉丝数并没有跟上资历。',
-    ];
-    roast = randomFrom(shortRoasts);
+  if (infoRes.code !== 0) {
+    throw new Error(infoRes.message || '用户不存在，请检查UID');
   }
 
-  // Generate dynamic tags
-  const extraTags = [];
-  if (features.hasNumber) extraTags.push('#️⃣ 带数字');
-  if (features.hasChinese) extraTags.push('🀄 中文ID');
-  if (features.looksGenerated) extraTags.push('🤖 默认名');
-  if (features.length > 10) extraTags.push('📏 名字太长');
-  if (features.onlyLetters) extraTags.push('🔤 纯英文');
-
-  const allTags = [...templ.tags, ...extraTags].slice(0, 5);
+  const info = infoRes.data;
+  const stat = statRes.data || {};
+  const video = videoRes.data || {};
 
   return {
-    grade: templ.grade,
-    title: templ.title,
-    roast,
-    detail,
-    tags: allTags,
-    roastScore: templ.roastScore + Math.floor(Math.random() * 6) - 3,
-    funScore: templ.funScore + Math.floor(Math.random() * 6) - 3,
-    heartScore: templ.heartScore + Math.floor(Math.random() * 6) - 3,
+    uid: info.mid,
+    name: info.name,
+    avatar: info.face,
+    sign: info.sign || '这个人很懒，什么都没写',
+    level: info.level,
+    fans: info.follower || 0,
+    following: info.following || 0,
+    totalViews: stat.archive?.view || 0,
+    totalLikes: stat.likes || 0,
+    videoCount: video.page?.count || 0,
   };
 }
 
-function startRoast() {
-  const input = document.getElementById('dyInput').value.trim();
-  if (!input) {
-    document.getElementById('dyInput').focus();
-    showToast('请输入抖音号或抖音ID！');
+// ========== 格式化数字 ==========
+function fmt(n) {
+  if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿';
+  if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+  return String(n);
+}
+
+// ========== 锐评引擎 ==========
+function generateRoast(data) {
+  const { name, fans, totalViews, totalLikes, videoCount, level, sign, following } = data;
+
+  // 计算综合"战绩"
+  const avgView = videoCount > 0 ? totalViews / videoCount : 0;
+  const likeViewRatio = totalViews > 0 ? totalLikes / totalViews : 0;
+  const fanViewRatio = fans > 0 ? totalViews / fans : 0;
+  let grade, title, roasts, details, tags;
+
+  // 等级判定
+  if (fans >= 1000000) {
+    grade = 'S'; title = '百大UP主 👑';
+    roasts = [
+      `百大UP主「${name}」是吧？建议把"B站是我家"刻在脑门上。`,
+      `粉丝${fmt(fans)}，平均每个视频够开一场线下见面会了。`,
+      `你的视频我看过，确实牛逼——但下次能不能别再标题党了？`,
+    ];
+    details = [`粉丝${fmt(fans)}、总播放${fmt(totalViews)}，数据碾压99%的UP主。但越是顶流，翻车的时候摔得越惨。`, `内容质量有目共睹，建议少接点商单，多做点好内容。`];
+    tags = ['👑 百大', '🔥 顶流', '💰 不缺钱'];
+  } else if (fans >= 100000) {
+    grade = 'A'; title = '知名UP主 ✨';
+    roasts = [
+      `「${name}」——在B站也算个名人了，虽然出了B站没人认识你。`,
+      `粉丝${fmt(fans)}，按B站人均粉丝算法，你相当于一个小县城的人口。`,
+      `你的视频质量还行，就是更新频率像极了甲方催稿前的你。`,
+    ];
+    details = [`${fmt(fans)}粉丝，在B站属于中上层。但${level < 6 ? '等级才Lv.'+level+'，混了这么久还没满级' : '等级Lv.'+level+'，老玩家了'}，懂我意思吧？`];
+    tags = ['📈 小有名气', '🎬 质量还行', '⏰ 爱更不更'];
+  } else if (fans >= 10000) {
+    grade = 'B'; title = '万粉UP主 😏';
+    roasts = [
+      `${fmt(fans)}粉丝，勉强够在B站要个认证了——虽然也没啥用。`,
+      `「${name}」—— 一万个人关注了你，但其中至少有2000是僵尸粉。`,
+      `${fmt(videoCount)}个视频换${fmt(fans)}个粉丝，平均${videoCount > 0 ? Math.round(fans/videoCount) : 0}个人看一个视频，这买卖划算吗？`,
+    ];
+    details = [`${fmt(fans)}粉丝·${fmt(totalViews)}播放·${fmt(videoCount)}视频。数据还行，但离起飞总差那么一口气。`, `建议学学别人的标题怎么起的——你现在的标题跟论文题目似的。`];
+    tags = ['🌱 万粉', '📊 有数据', '🚀 差一口气'];
+  } else if (fans >= 1000) {
+    grade = 'C'; title = '千粉小UP 🥬';
+    roasts = [
+      `${fmt(fans)}粉，恭喜你已经超越了B站80%的注册用户——另外20%是注册完就没登录过的。`,
+      `「${name}」你的${fmt(videoCount)}个视频，平均播放${avgView > 0 ? fmt(Math.round(avgView)) : 0}，够凑一桌麻将了。`,
+      `等级Lv.${level}，粉丝${fmt(fans)}——你这个号像极了我的健身卡，办了但没完全用。`,
+    ];
+    details = [`${fmt(fans)}粉丝，在B站算刚起步。${sign.length > 20 ? '简介写了一大串但没什么人看' : '简介比你的播放量还短'}。`, `建议先定个小目标：让粉丝数超过你关注的人数（${fmt(following)}）。`];
+    tags = ['🌱 千粉', '💪 还在努力', '📺 小UP主'];
+  } else if (fans >= 100) {
+    grade = 'D'; title = '百粉透明 💀';
+    roasts = [
+      `${fmt(fans)}粉，说好听点叫"小而美"，说难听点就是没人看。`,
+      `「${name}」你的视频播放量加起来，还没你B站首页推荐的一个零头多。`,
+      `${fmt(videoCount)}个视频${fmt(fans)}个粉——B站的推荐算法可能真的不认识你。`,
+    ];
+    details = [`数据惨淡但别灰心——谁还不是从0开始的呢？建议检查一下标题、封面、内容三个核心要素。`, `${level === 0 ? '注册了这么久还是Lv.0，你到底是来发视频的还是来看视频的？' : '等级Lv.'+level+'，还有很长的路要走。'}`];
+    tags = ['👻 透明人', '📉 数据惨淡', '💀 算法不认识'];
+  } else {
+    grade = 'F'; title = '建议注销 🔥';
+    roasts = [
+      `${fmt(fans)}个粉丝——你管这叫UP主？`,
+      `「${name}」你的账号像被遗弃的QQ空间，注册了就再也没管过。`,
+      `B站服务器为你浪费了存储空间，建议你交点电费。`,
+    ];
+    details = [`要么刚注册，要么放弃治疗了。不管是哪种，这个锐评就是你账号的全部高光时刻。`];
+    tags = ['🗑️ 空账号', '💤 已弃坑', '🤷 来都来了'];
+  }
+
+  // 追加一些基于真实数据的定制吐槽
+  const extraDetails = [];
+  if (avgView > 0 && avgView < 100) extraDetails.push(`单均播放${fmt(Math.round(avgView))}，你这视频是发给鬼看的吗？`);
+  if (fanViewRatio > 0 && fanViewRatio < 5 && fans > 100) extraDetails.push(`总播放${fmt(totalViews)}，连粉丝数的${Math.round(fanViewRatio)}倍都不到——你的粉丝自己都不看你的视频。`);
+  if (likeViewRatio > 0 && likeViewRatio < 0.02) extraDetails.push(`点赞率${(likeViewRatio*100).toFixed(1)}%，观众连点个赞都懒得动手指。`);
+  if (videoCount > 0 && videoCount < 5) extraDetails.push(`才发了${videoCount}个视频，B站服务器还没记住你长啥样。`);
+  if (level >= 5 && fans < 1000) extraDetails.push(`等级Lv.${level}才${fmt(fans)}粉——你是在B站养老吗？`);
+  if (following > 1000) extraDetails.push(`关注了${fmt(following)}个人，你这是逛B站还是逛菜市场？`);
+  if (sign.includes('商务') || sign.includes('合作') || sign.includes('微信')) extraDetails.push('简介放了联系方式，一看就是想恰饭的。');
+  if (sign.includes('学生') || sign.includes('大学生')) extraDetails.push('学生UP主，懂了——时间多但不想更。');
+
+  if (extraDetails.length > 0) {
+    details.push(extraDetails[Math.floor(Math.random() * extraDetails.length)]);
+  }
+
+  // 额外标签
+  const extraTags = [];
+  if (level >= 6) extraTags.push('🏆 Lv.6大佬');
+  if (fans > following) extraTags.push('📈 粉丝>关注');
+  if (videoCount > 100) extraTags.push('🎥 高产似母猪');
+  if (avgView > 50000) extraTags.push('💥 单均爆款');
+  if (likeViewRatio > 0.05) extraTags.push('👍 点赞率高');
+  if (sign.length > 100) extraTags.push('📝 小作文简介');
+  if (sign === '' || sign === '这个人很懒，什么都没写') extraTags.push('😴 懒人简介');
+
+  return {
+    grade, title,
+    roast: roasts[Math.floor(Math.random() * roasts.length)],
+    detail: details[Math.floor(Math.random() * details.length)],
+    tags: [...tags, ...extraTags].slice(0, 6),
+  };
+}
+
+// ========== 主流程 ==========
+const LOADING_TEXTS = [
+  '正在查询B站API...', '分析粉丝成分中...', '计算播放量密度...',
+  '评估视频质量...', '翻看历史视频...', '跟推荐算法激烈讨论...',
+  '准备扎心台词...', '格式化毒舌输出...',
+];
+
+async function startRoast() {
+  const input = document.getElementById('uidInput').value.trim();
+  if (!input || !/^\d+$/.test(input)) {
+    showToast('请输入纯数字UID！');
     return;
   }
 
+  // 重置UI
   document.getElementById('roastBtn').disabled = true;
   document.getElementById('loading').classList.add('active');
   document.getElementById('result').classList.remove('active');
+  document.getElementById('errorBox').classList.remove('active');
+  document.getElementById('avatar').querySelector('img').src = '';
 
-  // Loading animation
+  // 加载动画
   const bar = document.getElementById('loadingBar');
   const loadingText = document.getElementById('loadingText');
-  let progress = 0;
-  let textIdx = 0;
-
-  const textInterval = setInterval(() => {
-    textIdx = (textIdx + 1) % LOADING_TEXTS.length;
-    loadingText.textContent = LOADING_TEXTS[textIdx];
-  }, 600);
-
-  const progressInterval = setInterval(() => {
-    progress += Math.random() * 15 + 5;
-    if (progress > 95) progress = 95;
+  let progress = 0, ti = 0;
+  const tInt = setInterval(() => {
+    ti = (ti + 1) % LOADING_TEXTS.length;
+    loadingText.textContent = LOADING_TEXTS[ti];
+  }, 500);
+  const pInt = setInterval(() => {
+    progress += Math.random() * 12 + 3;
+    if (progress > 90) progress = 90;
     bar.style.width = progress + '%';
   }, 200);
 
-  // Generate result after delay
-  setTimeout(() => {
-    clearInterval(textInterval);
-    clearInterval(progressInterval);
+  try {
+    const data = await fetchBilibiliData(input);
+    clearInterval(tInt); clearInterval(pInt);
     bar.style.width = '100%';
+    await new Promise(r => setTimeout(r, 300));
 
-    setTimeout(() => {
-      const result = generateRoast(input);
-      displayResult(input, result);
-      document.getElementById('loading').classList.remove('active');
-      document.getElementById('result').classList.add('active');
-      document.getElementById('roastBtn').disabled = false;
-      document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 400);
-  }, 2000 + Math.random() * 1000);
+    displayResult(data);
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('result').classList.add('active');
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    clearInterval(tInt); clearInterval(pInt);
+    document.getElementById('loading').classList.remove('active');
+    showError(err.message || '获取数据失败，请检查UID是否正确');
+  }
+  document.getElementById('roastBtn').disabled = false;
 }
 
-function displayResult(input, result) {
-  document.getElementById('resultUser').textContent = '@' + input;
+function displayResult(data) {
+  const result = generateRoast(data);
+
+  document.getElementById('uname').textContent = data.name;
+  document.getElementById('uidDisplay').textContent = 'UID: ' + data.uid;
+  const avatarImg = document.getElementById('avatar').querySelector('img');
+  avatarImg.src = data.avatar || '';
   document.getElementById('resultBadge').textContent = result.grade;
   document.getElementById('roastText').textContent = result.roast;
   document.getElementById('roastDetail').textContent = result.detail;
-  document.getElementById('statRoast').textContent = result.roastScore;
-  document.getElementById('statFun').textContent = result.funScore;
-  document.getElementById('statHeart').textContent = result.heartScore;
 
-  // Badge color
-  const badge = document.getElementById('resultBadge');
-  const gradeColors = {
-    S: '#FFD700', A: '#00F2EA', B: '#999',
-    C: '#FF8C00', D: '#FF0050', F: '#000',
-  };
-  badge.style.color = gradeColors[result.grade] || '#000';
+  const gradeColors = { S: '#FFD700', A: '#00A1D6', B: '#999', C: '#FF8C00', D: '#FB7299', F: '#000' };
+  document.getElementById('resultBadge').style.color = gradeColors[result.grade] || '#000';
 
-  // Tags
-  const tagsContainer = document.getElementById('tags');
-  tagsContainer.innerHTML = '';
-  result.tags.forEach((tag, i) => {
-    const span = document.createElement('span');
-    span.className = 'tag ' + (['pink', 'cyan', 'yellow', '', ''][i % 5]);
-    span.textContent = tag;
-    tagsContainer.appendChild(span);
+  // 数据
+  document.getElementById('dFans').textContent = fmt(data.fans);
+  document.getElementById('dViews').textContent = fmt(data.totalViews);
+  document.getElementById('dLikes').textContent = fmt(data.totalLikes);
+  document.getElementById('dVideos').textContent = fmt(data.videoCount);
+
+  // 标签
+  const tc = document.getElementById('tags');
+  tc.innerHTML = '';
+  result.tags.forEach((t, i) => {
+    const s = document.createElement('span');
+    s.className = 'tag ' + (['pink','blue','yellow','',''][i % 5]);
+    s.textContent = t;
+    tc.appendChild(s);
   });
 }
 
+function showError(msg) {
+  document.getElementById('errorContent').innerHTML = `<strong>😅 翻车了</strong><br>${msg}`;
+  document.getElementById('errorBox').classList.add('active');
+  document.getElementById('errorBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function shareResult() {
-  const input = document.getElementById('dyInput').value.trim();
+  const uname = document.getElementById('uname').textContent;
   const grade = document.getElementById('resultBadge').textContent;
   const roast = document.getElementById('roastText').textContent;
-
+  const text = `我的B站号「${uname}」被锐评了！等级：${grade}\n${roast}`;
   if (navigator.share) {
-    navigator.share({
-      title: '抖音锐评',
-      text: `我的抖音账号「${input}」被锐评了！等级：${grade}\n${roast}\n\n你也来试试 👉 douyin-roast.vercel.app`,
-    }).catch(() => {});
+    navigator.share({ title: 'B站锐评', text }).catch(() => {});
   } else {
-    const text = `我的抖音账号「${input}」被锐评了！等级：${grade}\n${roast}`;
-    navigator.clipboard.writeText(text).then(() => {
-      showToast('已复制到剪贴板，快去分享吧！');
-    }).catch(() => {
-      showToast('复制失败，请手动复制');
-    });
+    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板！')).catch(() => showToast('复制失败'));
   }
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// Enter to submit
-document.getElementById('dyInput').addEventListener('keydown', (e) => {
+function fillExample(uid) {
+  document.getElementById('uidInput').value = uid;
+  startRoast();
+}
+
+document.getElementById('uidInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') startRoast();
 });
-
-// Random placeholder
-const PLACEHOLDERS = ['你的抖音号...', 'dy123456...', '输入账号开始被怼...', '不怕死就来...'];
-let phIdx = 0;
-setInterval(() => {
-  phIdx = (phIdx + 1) % PLACEHOLDERS.length;
-  document.getElementById('dyInput').placeholder = PLACEHOLDERS[phIdx];
-}, 2500);
 </script>
 </body>
 </html>
