@@ -475,14 +475,17 @@ footer a { color: var(--black); font-weight: 700; }
 </footer>
 
 <script>
-// ========== CORS 代理 ==========
-const CORS_PROXY = 'https://corsproxy.io/?url=';
+// ========== API 基础路径（自动适配环境） ==========
+// 如果部署在 ECS 同源代理下，使用相对路径；否则用 CORS 代理
+const IS_ECS = window.location.hostname === '121.43.35.59' || window.location.pathname.startsWith('/roast');
+const API_BASE = IS_ECS
+  ? '/roast/api/bilibili'
+  : 'https://corsproxy.io/?url=https://api.bilibili.com';
 
-// ========== API ==========
 const API = {
-  userInfo: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/acc/info?mid=${uid}`),
-  upstat: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/upstat?mid=${uid}`),
-  videoCount: uid => CORS_PROXY + encodeURIComponent(`https://api.bilibili.com/x/space/arc/search?mid=${uid}&ps=1&pn=1`),
+  userInfo: uid => `${API_BASE}/x/space/acc/info?mid=${uid}`,
+  upstat: uid => `${API_BASE}/x/space/upstat?mid=${uid}`,
+  videoCount: uid => `${API_BASE}/x/space/arc/search?mid=${uid}&ps=1&pn=1`,
 };
 
 async function fetchBilibiliData(uid) {
