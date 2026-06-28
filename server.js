@@ -179,7 +179,16 @@ function biliFetchOnce(path) {
 }
 
 // ========== DeepSeek 毒舌文案生成 ==========
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || (function() { try { return fs.readFileSync('/opt/deepseek_key','utf8').trim(); } catch(e) { return ''; } })();
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || (function() { try {
+  var raw = fs.readFileSync('/opt/deepseek_key','utf8').trim();
+  var parts = raw.split(':');
+  if (parts.length !== 2) return '';
+  var decKey = crypto.createHash('sha256').update('bilibili-roast-ds-key-v1').digest();
+  var decipher = crypto.createDecipheriv('aes-256-cbc', decKey, Buffer.from(parts[0],'hex'));
+  var dec = decipher.update(parts[1],'hex','utf8');
+  dec += decipher.final('utf8');
+  return dec;
+} catch(e) { return ''; }})();
 
 async function generateDeepSeekRoast(data) {
   if (!DEEPSEEK_KEY) return null;
