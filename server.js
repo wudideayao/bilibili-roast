@@ -191,7 +191,7 @@ const server = http.createServer(async (req, res) => {
       const cacheKey = `user:${mid}`;
       const cached = getCache(cacheKey);
       if (cached) {
-        res.end(JSON.stringify({ code: 0, info: cached.info, search: cached.search, cached: true }));
+        res.end(JSON.stringify({ code: 0, info: cached.info, search: cached.search, relation: cached.relation, cached: true }));
         return;
       }
 
@@ -200,13 +200,14 @@ const server = http.createServer(async (req, res) => {
       const qs = Object.entries(infoParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
 
       const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`, 4);
+      const rawRelation = await biliFetch(`/x/relation/stat?vmid=${mid}`, 2).catch(() => null);
       const searchParams = await wbiSign({ mid, ps: 1, pn: 1 });
       const searchQs = Object.entries(searchParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
       const rawSearch = await biliFetch(`/x/space/arc/search?${searchQs}`, 2).catch(() => null);
 
-      setCache(cacheKey, { info: rawInfo, search: rawSearch });
+      setCache(cacheKey, { info: rawInfo, search: rawSearch, relation: rawRelation });
 
-      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch }));
+      res.end(JSON.stringify({ code: 0, info: rawInfo, search: rawSearch, relation: rawRelation }));
     } else {
       res.statusCode = 404;
       res.end(JSON.stringify({ error: '未知路径' }));
