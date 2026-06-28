@@ -118,7 +118,7 @@ async function processQueue() {
       try {
         result = await biliFetchOnce(path);
         if (result && result.code === -799) {
-          const wait = 5000 * (attempt + 1) + Math.random() * 3000;
+          const wait = 2000 * (attempt + 1) + Math.random() * 2000;
           await sleep(wait);
           continue;
         }
@@ -133,8 +133,8 @@ async function processQueue() {
     }
     if (lastErr) { reject(lastErr); processing = false; return; }
     resolve(result);
-    // 请求间隔至少 4 秒（防风控）
-    if (requestQueue.length > 0) await sleep(4000 + Math.random() * 2000);
+    // 请求间隔（有 Cookie 登录，限流宽松）
+    if (requestQueue.length > 0) await sleep(800 + Math.random() * 600);
   }
   processing = false;
 }
@@ -238,24 +238,31 @@ const server = http.createServer(async (req, res) => {
       const cacheKey = `user:${mid}`;
       const cached = getCache(cacheKey);
       if (cached) {
-        res.end(JSON.stringify({ code: 0, info: cached.info, search: cached.search, relation: cached.relation, upstat: cached.upstat, cached: true }));
+        res.end(JSON.stringify({ code: 0, info: cached.info, relation: cached.relation, upstat: cached.upstat, cached: true }));
         return;
       }
 
-      await getWbiKeys();
-      const infoParams = await wbiSign({ mid });
-      const qs = Object.entries(infoParams).map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&');
+      // 并行取 WBI key 和发请求（不经过队列，真正并行）
+      var [wbiPromise] = await Promise.all([getWbiKeys()]);
+      var infoParams = await wbiSign({ mid });
+      var qs = Object.entries(infoParams).map(function(e) { return e[0] + '=' + encodeURIComponent(String(e[1])); }).join('&');
 
-      const rawInfo = await biliFetch(`/x/space/acc/info?${qs}`, 4);
-      const rawRelation = await biliFetch(`/x/relation/stat?vmid=${mid}`, 2).catch(() => null);
-      const rawUpstat = USER_COOKIE ? await biliFetch(`/x/space/upstat?mid=${mid}`, 2).catch(() => null) : null;
-      // 搜索接口（先试无 WBI，被限流了再试有 WBI）
-      let rawSearch = await biliFetch(`/x/space/arc/search?mid=${mid}&ps=1&pn=1`, 1).catch(() => null);
-      if (!rawSearch || rawSearch.code === -412) {
-        const sp = await wbiSign({ mid, ps: 1, pn: 1 });
-        const sq = Object.entries(sp).map(function(e) { return e[0] + '=' + encodeURIComponent(String(e[1])); }).join('&');
-        rawSearch = await biliFetch('/x/space/arc/search?' + sq, 3).catch(function() { return null; });
+      async function fetchRetry(url, retries) {
+        for (var i = 0; i < retries; i++) {
+          try {
+            var r = await biliFetchOnce(url);
+            if (r && r.code === -799) { await sleep(2000 + Math.random() * 2000); continue; }
+            return r;
+          } catch(e) { if (i < retries - 1) await sleep(1000 + Math.random() * 1000); }
+        }
+        return null;
       }
+
+      var [rawInfo, rawRelation, rawUpstat] = await Promise.all([
+        fetchRetry('/x/space/acc/info?' + qs, 4),
+        fetchRetry('/x/relation/stat?vmid=' + mid, 2),
+        USER_COOKIE ? fetchRetry('/x/space/upstat?mid=' + mid, 2) : Promise.resolve(null),
+      ]);
 
       setCache(cacheKey, { info: rawInfo, relation: rawRelation, upstat: rawUpstat });
 
