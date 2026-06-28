@@ -478,17 +478,42 @@ footer a { color: var(--black); font-weight: 700; }
 // ========== API 基础路径（自动适配环境） ==========
 // 如果部署在 ECS 同源代理下，使用相对路径；否则用 CORS 代理
 const IS_ECS = window.location.hostname === '121.43.35.59' || window.location.pathname.startsWith('/roast');
-const API_BASE = IS_ECS
-  ? '/roast/api/bilibili'
-  : 'https://corsproxy.io/?url=https://api.bilibili.com';
 
-const API = {
-  userInfo: uid => `${API_BASE}/x/space/acc/info?mid=${uid}`,
-  upstat: uid => `${API_BASE}/x/space/upstat?mid=${uid}`,
-  videoCount: uid => `${API_BASE}/x/space/arc/search?mid=${uid}&ps=1&pn=1`,
-};
+// ECS 上使用 Node.js WBI 签名代理；GitHub Pages 上用 CORS 代理（兜底）
+const V2_API = '/roast/api/v2/user?mid=';
+const FALLBACK_BASE = 'https://corsproxy.io/?url=https://api.bilibili.com';
 
 async function fetchBilibiliData(uid) {
+  if (IS_ECS) {
+    // ===== ECS 模式：一次请求，服务端完成 WBI 签名 =====
+    const res = await fetch(V2_API + uid).then(r => r.json());
+    if (res.code !== 0) throw new Error('API 返回异常');
+
+    const info = res.info?.data;
+    if (!info) throw new Error(res.info?.message || '用户不存在，请检查UID');
+    const stat = res.stat?.data || {};
+
+    return {
+      uid: info.mid,
+      name: info.name,
+      avatar: info.face,
+      sign: info.sign || '这个人很懒，什么都没写',
+      level: info.level,
+      fans: info.follower || 0,
+      following: info.following || 0,
+      totalViews: stat.archive?.view || 0,
+      totalLikes: stat.likes || 0,
+      videoCount: 0,
+    };
+  }
+
+  // ===== GitHub Pages 模式：直连 B 站 API（可能被风控） =====
+  const API = {
+    userInfo: uid => `${FALLBACK_BASE}/x/space/acc/info?mid=${uid}`,
+    upstat: uid => `${FALLBACK_BASE}/x/space/upstat?mid=${uid}`,
+    videoCount: uid => `${FALLBACK_BASE}/x/space/arc/search?mid=${uid}&ps=1&pn=1`,
+  };
+
   const [infoRes, statRes] = await Promise.all([
     fetch(API.userInfo(uid)).then(r => r.json()),
     fetch(API.upstat(uid)).then(r => r.json()),
@@ -498,7 +523,6 @@ async function fetchBilibiliData(uid) {
     throw new Error(infoRes.message || '用户不存在，请检查UID');
   }
 
-  // arc/search 接口容易被风控，单独降级处理
   let videoCount = 0;
   try {
     const videoRes = await fetch(API.videoCount(uid)).then(r => r.json());
