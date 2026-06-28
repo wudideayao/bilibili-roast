@@ -179,7 +179,7 @@ function biliFetchOnce(path) {
 }
 
 // ========== DeepSeek 毒舌文案生成 ==========
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || '';
+const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || (function() { try { return fs.readFileSync('/opt/deepseek_key','utf8').trim(); } catch(e) { return ''; } })();
 
 async function generateDeepSeekRoast(data) {
   if (!DEEPSEEK_KEY) return null;
