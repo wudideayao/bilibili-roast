@@ -13,39 +13,17 @@ const MIXIN_KEY_ENC_TAB = [
   51, 44, 34, 20, 48, 41, 36, 6, 17, 60, 22, 22, 62, 63, 61, 4,
 ];
 
-// 多 User-Agent 轮换
-const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36 Edg/128.0.0.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.6 Safari/605.1.15',
-];
-let uaIndex = 0;
-function nextUA() {
-  const ua = USER_AGENTS[uaIndex % USER_AGENTS.length];
-  uaIndex++;
-  return ua;
-}
-
-// ========== Cookie 生成 ==========
+// ========== 模拟固定浏览器身份（复用 Cookie & UA，不被识别为爬虫） ==========
 function randStr(len) {
   return crypto.randomBytes(Math.ceil(len / 2)).toString('hex').slice(0, len);
 }
-function makeBuvid3() {
-  return `${randStr(8)}-${randStr(4)}-${randStr(4)}-${randStr(4)}-${randStr(12)}infoc`;
-}
-function makeFp() {
+
+// 启动时生成一次，整个生命周期复用
+const SESSION_COOKIES = (() => {
   const ts = Date.now();
-  const r1 = Math.floor(Math.random() * 1e7);
-  const r2 = Math.floor(Math.random() * 1e7);
-  return `${ts}_${r1}_${r2}`;
-}
-function makeCookies() {
-  const b3 = makeBuvid3();
-  const fp = makeFp();
+  const fp = `${ts}_${Math.floor(Math.random() * 1e7)}_${Math.floor(Math.random() * 1e7)}`;
   return [
-    `buvid3=${b3}`,
+    `buvid3=${randStr(8)}-${randStr(4)}-${randStr(4)}-${randStr(4)}-${randStr(12)}infoc`,
     `buvid4=${randStr(16)}`,
     `_uuid=${randStr(32)}`,
     `fingerprint=${fp}`,
@@ -55,7 +33,9 @@ function makeCookies() {
     `buvid_ts=${Math.floor(Date.now() / 1000)}`,
     `rpdid=|(${randStr(8)}${randStr(4)})`,
   ].join('; ');
-}
+})();
+
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
 // ========== WBI 签名 ==========
 let wbiKeys = null;
@@ -108,26 +88,47 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function biliFetch(path, retries = 3) {
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      const result = await biliFetchOnce(path);
-      if (result && result.code === -799) {
-        // 被限流，等一会重试
-        const wait = 2000 * (attempt + 1) + Math.random() * 3000;
-        await sleep(wait);
-        continue;
-      }
-      return result;
-    } catch (e) {
-      if (attempt < retries - 1) {
-        await sleep(1500 + Math.random() * 2000);
-      } else {
-        throw e;
+// ========== 请求队列：序列化所有 B 站请求，间隔至少 3 秒 ==========
+const requestQueue = [];
+let processing = false;
+
+async function processQueue() {
+  if (processing) return;
+  processing = true;
+  while (requestQueue.length > 0) {
+    const { path, retries, resolve, reject } = requestQueue.shift();
+    let result = null;
+    for (let attempt = 0; attempt < retries; attempt++) {
+      try {
+        result = await biliFetchOnce(path);
+        if (result && result.code === -799) {
+          const wait = 5000 * (attempt + 1) + Math.random() * 5000;
+          await sleep(wait);
+          continue;
+        }
+        break;
+      } catch (e) {
+        if (attempt < retries - 1) {
+          await sleep(3000 + Math.random() * 3000);
+        } else {
+          reject(e);
+          processing = false;
+          return;
+        }
       }
     }
+    resolve(result);
+    // 每个请求之间至少间隔 3 秒
+    if (requestQueue.length > 0) await sleep(3000 + Math.random() * 2000);
   }
-  return null;
+  processing = false;
+}
+
+function biliFetch(path, retries = 3) {
+  return new Promise((resolve, reject) => {
+    requestQueue.push({ path, retries, resolve, reject });
+    processQueue();
+  });
 }
 
 function biliFetchOnce(path) {
@@ -138,13 +139,12 @@ function biliFetchOnce(path) {
       path: u.pathname + u.search,
       method: 'GET',
       headers: {
-        'User-Agent': nextUA(),
+        'User-Agent': USER_AGENT,
         'Referer': 'https://www.bilibili.com/',
         'Origin': 'https://www.bilibili.com',
-        'Cookie': makeCookies(),
+        'Cookie': SESSION_COOKIES,
         'Accept': 'application/json, text/plain, */*',
         'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Accept-Encoding': 'gzip, deflate, br',
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
