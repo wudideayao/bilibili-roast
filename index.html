@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -16,6 +16,7 @@
   --gray: #444;
   --yellow: #FFD700;
   --bg: #f0eef6;
+  --border: 3px solid var(--black);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -34,7 +35,7 @@ nav {
   align-items: center;
   padding: 14px 24px;
   background: var(--white);
-  border-bottom: 3px solid var(--black);
+  border-bottom: var(--border);
   position: relative;
   z-index: 10;
 }
@@ -53,9 +54,61 @@ nav {
   border-radius: 20px;
   letter-spacing: 1px;
 }
+.nav-actions { display: flex; gap: 8px; align-items: center; }
+.nav-actions button {
+  background: none;
+  border: 2px solid var(--black);
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.nav-actions button:hover {
+  background: var(--black);
+  color: white;
+}
 
+.tabs {
+  display: flex;
+  border-bottom: var(--border);
+  background: var(--white);
+}
+.tab {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  position: relative;
+  transition: all 0.12s;
+}
+.tab:hover { background: #eee; }
+.tab.active {
+  background: var(--black);
+  color: white;
+}
+.tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--pink);
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== Roast Page ===== */
 .hero {
-  padding: 60px 24px 40px;
+  padding: 50px 24px 36px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -74,7 +127,7 @@ nav {
   pointer-events: none;
 }
 .hero h1 {
-  font-size: clamp(56px, 14vw, 120px);
+  font-size: clamp(48px, 12vw, 100px);
   font-weight: 900;
   line-height: 0.9;
   letter-spacing: -3px;
@@ -87,21 +140,20 @@ nav {
   transform: rotate(-1.5deg);
 }
 .hero p {
-  font-size: 16px;
-  margin-top: 18px;
+  font-size: 15px;
+  margin-top: 16px;
   color: var(--gray);
   max-width: 480px;
   margin-left: auto;
   margin-right: auto;
   line-height: 1.6;
 }
-
 .sticker {
   position: absolute;
   font-weight: 900;
   padding: 4px 14px;
   transform: rotate(-6deg);
-  font-size: 13px;
+  font-size: 12px;
   pointer-events: none;
   z-index: 1;
 }
@@ -110,20 +162,18 @@ nav {
 
 .input-section {
   max-width: 520px;
-  margin: 0 auto 40px;
+  margin: 0 auto 36px;
   padding: 0 24px;
 }
 .input-wrap {
   display: flex;
   gap: 0;
-  border: 3px solid var(--black);
+  border: var(--border);
   background: var(--white);
   box-shadow: 8px 8px 0 var(--black);
   transition: box-shadow 0.2s;
 }
-.input-wrap:focus-within {
-  box-shadow: 8px 8px 0 var(--pink);
-}
+.input-wrap:focus-within { box-shadow: 8px 8px 0 var(--pink); }
 .input-wrap input {
   flex: 1;
   border: none;
@@ -154,9 +204,8 @@ nav {
   color: #999;
   text-align: center;
 }
-.input-hint a { color: var(--blue); font-weight: 700; }
+.input-hint a { color: var(--blue); font-weight: 700; cursor: pointer; }
 
-/* Loading */
 .loading {
   display: none;
   max-width: 480px;
@@ -187,7 +236,6 @@ nav {
 }
 @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
-/* Error */
 .error-box {
   display: none;
   max-width: 520px;
@@ -196,16 +244,14 @@ nav {
 }
 .error-box.active { display: block; }
 .error-card {
-  border: 3px solid var(--pink);
+  border: var(--border);
   background: var(--white);
   padding: 20px 24px;
   box-shadow: 6px 6px 0 var(--pink);
   font-size: 14px;
   line-height: 1.7;
 }
-.error-card strong { color: var(--pink); }
 
-/* Result */
 .result {
   display: none;
   max-width: 620px;
@@ -213,9 +259,8 @@ nav {
   padding: 0 24px;
 }
 .result.active { display: block; }
-
 .result-card {
-  border: 3px solid var(--black);
+  border: var(--border);
   background: var(--white);
   box-shadow: 10px 10px 0 var(--black);
   overflow: hidden;
@@ -245,32 +290,16 @@ nav {
 }
 .avatar img { width: 100%; height: 100%; border-radius: 50%; display: block; }
 .user-meta { min-width: 0; }
-.user-meta .uname {
-  font-size: 17px;
-  font-weight: 700;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.user-meta .uid {
-  font-size: 12px;
-  color: #999;
-}
-.badge-grade {
-  font-size: 40px;
-  font-weight: 900;
-  line-height: 1;
-  flex-shrink: 0;
-}
+.user-meta .uname { font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-meta .uid { font-size: 12px; color: #999; }
+.badge-grade { font-size: 40px; font-weight: 900; line-height: 1; flex-shrink: 0; }
 
-.result-body {
-  padding: 24px;
-}
+.result-body { padding: 24px; }
 .roast-text {
   font-size: 20px;
   line-height: 1.6;
   font-weight: 700;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 .roast-detail {
   font-size: 14px;
@@ -279,10 +308,28 @@ nav {
   padding: 14px 18px;
   background: #f0eeea;
   border-left: 4px solid var(--pink);
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+}
+.ai-roast {
+  display: none;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--gray);
+  padding: 14px 18px;
+  background: #fff;
+  border-left: 4px solid var(--blue);
+  margin-bottom: 16px;
+}
+.ai-roast.active { display: block; }
+.ai-roast-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
 }
 
-/* Real data card */
 .data-card {
   border: 2px solid var(--black);
   padding: 16px;
@@ -301,19 +348,9 @@ nav {
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
-.data-item {
-  text-align: center;
-  padding: 8px 4px;
-}
-.data-item .dv {
-  font-size: 18px;
-  font-weight: 900;
-}
-.data-item .dl {
-  font-size: 10px;
-  color: #999;
-  margin-top: 2px;
-}
+.data-item { text-align: center; padding: 8px 4px; }
+.data-item .dv { font-size: 18px; font-weight: 900; }
+.data-item .dl { font-size: 10px; color: #999; margin-top: 2px; }
 
 .tags {
   display: flex;
@@ -338,7 +375,7 @@ nav {
 .result-actions button {
   flex: 1;
   padding: 12px;
-  border: 3px solid var(--black);
+  border: var(--border);
   font-size: 13px;
   font-weight: 700;
   font-family: inherit;
@@ -360,15 +397,146 @@ nav {
   box-shadow: 4px 4px 0 var(--blue);
 }
 
+.history-bar {
+  max-width: 620px;
+  margin: 0 auto 20px;
+  padding: 0 24px;
+}
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.history-toggle:hover { background: var(--black); color: white; }
+.history-panel {
+  display: none;
+  margin-top: 8px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  padding: 12px;
+}
+.history-panel.active { display: block; }
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  cursor: pointer;
+  transition: background 0.12s;
+  font-size: 13px;
+}
+.history-item:hover { background: #eee; }
+.history-item .hi-name { font-weight: 700; }
+.history-item .hi-grade { font-size: 11px; padding: 1px 6px; border: 1px solid var(--black); }
+.history-item .hi-time { font-size: 11px; color: #999; }
+
+/* ===== Leaderboard Page ===== */
+.leaderboard-page { padding: 20px 24px; max-width: 720px; margin: 0 auto; }
+.lb-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.lb-controls select, .lb-controls button {
+  padding: 8px 14px;
+  border: 2px solid var(--black);
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+}
+.lb-controls select:focus { outline: none; border-color: var(--pink); }
+.lb-controls button.active { background: var(--black); color: white; }
+
+.lb-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.lb-stat {
+  border: 2px solid var(--black);
+  background: var(--white);
+  padding: 12px;
+  text-align: center;
+}
+.lb-stat .lb-sv { font-size: 22px; font-weight: 900; }
+.lb-stat .lb-sl { font-size: 11px; color: #999; margin-top: 2px; }
+
+.lb-table-wrap {
+  border: var(--border);
+  background: var(--white);
+  box-shadow: 8px 8px 0 var(--black);
+  overflow: hidden;
+}
+.lb-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 50px 100px 100px 60px;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border-bottom: 1px solid #eee;
+}
+.lb-row:hover { background: #f0eeea; }
+.lb-row:last-child { border-bottom: none; }
+.lb-header {
+  background: var(--black);
+  color: white;
+  font-weight: 700;
+  cursor: default;
+}
+.lb-header:hover { background: var(--black); }
+.lb-rank { font-weight: 900; text-align: center; }
+.lb-rank.gold { color: var(--yellow); }
+.lb-rank.silver { color: #999; }
+.lb-rank.bronze { color: #cd7f32; }
+.lb-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.lb-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--pink);
+}
+.lb-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-grade { text-align: center; font-weight: 900; font-size: 16px; }
+.lb-count { text-align: center; color: #999; }
+.lb-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+.lb-loading {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-size: 14px;
+}
+
 footer {
   text-align: center;
   padding: 24px;
-  border-top: 3px solid var(--black);
+  border-top: var(--border);
   font-size: 12px;
   color: #999;
 }
 footer a { color: var(--black); font-weight: 700; }
-
 .toast {
   position: fixed;
   bottom: 20px;
@@ -386,13 +554,12 @@ footer a { color: var(--black); font-weight: 700; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-@media (max-width: 480px) {
+@media (max-width: 500px) {
   .input-wrap { flex-direction: column; }
   .data-grid { grid-template-columns: repeat(2, 1fr); }
-  .hero h1 { letter-spacing: -1px; }
-  .result-header { flex-wrap: wrap; }
+  .lb-row { grid-template-columns: 30px 1fr 40px 80px 80px 40px; font-size: 12px; }
+  .lb-stats { grid-template-columns: 1fr; }
 }
-
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--black); }
@@ -402,369 +569,389 @@ footer a { color: var(--black); font-weight: 700; }
 
 <nav>
   <div class="logo">
-    B站锐评
+    <span>B站锐评</span>
     <span class="logo-badge">毒舌版</span>
   </div>
-  <div style="font-size:13px;font-weight:700;cursor:pointer" onclick="location.reload()">↻ 重新鉴定</div>
+  <div class="nav-actions">
+    <button onclick="location.reload()">↻ 刷新</button>
+  </div>
 </nav>
 
-<section class="hero">
-  <span class="sticker sticker-1">🔥 真实数据，扎心预警</span>
-  <span class="sticker sticker-2">💀 基于B站公开API</span>
-  <h1>
-    B站<br>
-    <span class="highlight">锐评</span>
-  </h1>
-  <p>输入 UP 主的 UID，基于真实数据毒舌鉴定<br>（数据来自B站公开API，结果仅供娱乐 😈）</p>
-</section>
+<div class="tabs" role="tablist">
+  <button class="tab active" data-tab="roast" role="tab" aria-selected="true">🔥 锐评</button>
+  <button class="tab" data-tab="leaderboard" role="tab" aria-selected="false">🏆 排行榜</button>
+</div>
 
-<div class="input-section">
-  <div class="input-wrap">
-    <input type="text" id="uidInput" placeholder="输入B站UID..." maxlength="20" autocomplete="off">
-    <button id="roastBtn" onclick="startRoast()">开始鉴定</button>
+<!-- ========== 锐评页 ========== -->
+<div class="tab-content active" id="tab-roast" role="tabpanel">
+  <div class="hero">
+    <div class="sticker sticker-1">🔥 真实数据</div>
+    <div class="sticker sticker-2">💀 扎心预警</div>
+    <h1>被怼<br><span class="highlight">生成中</span></h1>
+    <p>输入 UP 主 UID，让 AI 给你的 B 站账号来一顿毒舌锐评<br>基于 B站公开 API · 数据真实</p>
   </div>
-  <div class="input-hint">UID 是纯数字，比如 <a href="#" onclick="fillExample('2');return false">2</a> · <a href="#" onclick="fillExample('3864480');return false">3864480</a> · <a href="#" onclick="fillExample('386849925');return false">386849925</a> · 在UP主主页URL就能找到</div>
-</div>
 
-<div class="loading" id="loading">
-  <div class="loading-bar"><div class="loading-bar-inner" id="loadingBar"></div></div>
-  <div class="loading-text" id="loadingText">正在爬取B站数据...</div>
-</div>
-
-<div class="error-box" id="errorBox">
-  <div class="error-card" id="errorContent"></div>
-</div>
-
-<div class="result" id="result">
-  <div class="result-card">
-    <div class="result-header">
-      <div class="header-left">
-        <div class="avatar" id="avatar"><img src="" alt="avatar" referrerpolicy="no-referrer"></div>
-        <div class="user-meta">
-          <div class="uname" id="uname">加载中</div>
-          <div class="uid" id="uidDisplay">UID: --</div>
-        </div>
-      </div>
-      <span class="badge-grade" id="resultBadge">?</span>
+  <div class="input-section">
+    <div class="input-wrap">
+      <input type="text" id="uidInput" placeholder="输入B站UID，比如 2" maxlength="20" autocomplete="off">
+      <button id="roastBtn" onclick="handleRoast()">🔍 开始锐评</button>
     </div>
-    <div class="result-body">
-      <div class="roast-text" id="roastText"></div>
-      <div class="roast-detail" id="roastDetail"></div>
-      <div class="data-card">
-        <h3>📊 真实数据</h3>
-        <div class="data-grid">
-          <div class="data-item"><div class="dv" id="dFans">--</div><div class="dl">粉丝</div></div>
-          <div class="data-item"><div class="dv" id="dViews">--</div><div class="dl">总播放</div></div>
-          <div class="data-item"><div class="dv" id="dLikes">--</div><div class="dl">总点赞</div></div>
-        </div>
-      </div>
-      <div class="tags" id="tags"></div>
-      <div class="result-actions">
-        <button class="btn-primary" onclick="shareResult()">📤 分享</button>
-        <button onclick="startRoast()">↻ 重新鉴定</button>
-      </div>
+    <div class="input-hint">
+      不知道 UID？去 UP 主个人主页看地址栏的数字 <a onclick="document.getElementById('uidInput').value='546195';handleRoast()">试试老番茄</a>
     </div>
   </div>
+
+  <div class="history-bar">
+    <button class="history-toggle" onclick="toggleHistory()">📋 查询历史</button>
+    <div class="history-panel" id="historyPanel"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="loading-bar"><div class="loading-bar-inner" id="loadingBar"></div></div>
+    <div class="loading-text" id="loadingText">正在获取用户数据...</div>
+  </div>
+
+  <div class="error-box" id="errorBox">
+    <div class="error-card" id="errorText"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="result-card">
+      <div class="result-header">
+        <div class="header-left">
+          <div class="avatar" id="avatarWrap"><img id="avatarImg" alt="avatar"></div>
+          <div class="user-meta">
+            <div class="uname" id="uname"></div>
+            <div class="uid" id="uidDisplay"></div>
+          </div>
+        </div>
+        <div class="badge-grade" id="gradeBadge"></div>
+      </div>
+      <div class="result-body">
+        <div class="roast-text" id="roastText"></div>
+        <div class="roast-detail" id="roastDetail"></div>
+        <div class="ai-roast" id="aiRoast">
+          <div class="ai-roast-label">🤖 AI 锐评</div>
+          <div id="aiRoastText"></div>
+        </div>
+        <div class="tags" id="tagsWrap"></div>
+        <div class="data-card">
+          <h3>📊 账号数据</h3>
+          <div class="data-grid">
+            <div class="data-item"><div class="dv" id="dFans">0</div><div class="dl">粉丝</div></div>
+            <div class="data-item"><div class="dv" id="dViews">0</div><div class="dl">总播放</div></div>
+            <div class="data-item"><div class="dv" id="dLikes">0</div><div class="dl">总点赞</div></div>
+            <div class="data-item"><div class="dv" id="dVideoCount">0</div><div class="dl">视频数</div></div>
+          </div>
+        </div>
+        <div class="result-actions">
+          <button class="btn-primary" onclick="shareResult()">📤 分享</button>
+          <button onclick="handleReRoast()">🔄 再怼一次</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- ========== 排行榜页 ========== -->
+<div class="tab-content" id="tab-leaderboard" role="tabpanel">
+  <div class="leaderboard-page">
+    <div class="lb-controls">
+      <select id="lbSort" onchange="loadLeaderboard()">
+        <option value="fans">按粉丝</option>
+        <option value="views">按播放</option>
+        <option value="likes">按点赞</option>
+        <option value="recent" selected>最新锐评</option>
+      </select>
+      <select id="lbPeriod" onchange="loadLeaderboard()">
+        <option value="today">今日</option>
+        <option value="week">本周</option>
+        <option value="all" selected>全部</option>
+      </select>
+      <button class="active" onclick="loadLeaderboard()">🔄 刷新</button>
+    </div>
+    <div class="lb-stats" id="lbStats"></div>
+    <div class="lb-table-wrap" id="lbTableWrap">
+      <div class="lb-loading" id="lbLoading">加载中...</div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>基于 B站公开 API · 仅供娱乐 · <a href="https://github.com/wudideayao/bilibili-roast" target="_blank">GitHub</a></p>
+</footer>
 
 <div class="toast" id="toast"></div>
 
-<footer>
-  数据来源：<a href="https://github.com/SocialSisterYi/bilibili-API-collect" target="_blank">B站公开API</a> · 仅供娱乐 · <a href="https://github.com/wudideayao/douyin-roast" target="_blank">GitHub</a>
-</footer>
-
 <script>
-// ========== API 基础路径（自动适配环境） ==========
-// 如果部署在 ECS 同源代理下，使用相对路径；否则用 CORS 代理
-const IS_ECS = window.location.hostname === '121.43.35.59' || window.location.pathname.startsWith('/roast');
+// ========== API 地址自动检测 ==========
+const IS_LOCAL = location.hostname === '127.0.0.1' || location.hostname === 'localhost';
+const API = IS_LOCAL ? '/api' : '/roast/api/v2';
+const STATIC = IS_LOCAL ? '' : '/roast';
 
-// ECS 上使用 Node.js WBI 签名代理；GitHub Pages 上用 CORS 代理（兜底）
-const V2_API = '/roast/api/v2/user?mid=';
-const FALLBACK_BASE = 'https://corsproxy.io/?url=https://api.bilibili.com';
+// ========== Tab 切换 ==========
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(x => { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    this.classList.add('active'); this.setAttribute('aria-selected', 'true');
+    document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    if (this.dataset.tab === 'leaderboard') loadLeaderboard();
+  });
+});
 
-async function fetchBilibiliData(uid) {
-  if (IS_ECS) {
-    // ===== ECS 模式：一次请求，服务端完成 WBI 签名 =====
-    const res = await fetch(V2_API + uid).then(r => r.json());
-    if (res.code !== 0) throw new Error('API 返回异常');
-
-    const info = res.info?.data;
-    if (!info) throw new Error(res.info?.message || '用户不存在，请检查UID');
-    const stat = res.relation?.data || {};
-    const up = res.upstat?.data?.archive || {};
-    const upLikes = res.upstat?.data?.likes || 0;
-
-    return {
-      uid: info.mid,
-      name: info.name,
-      avatar: info.face,
-      sign: info.sign || '这个人很懒，什么都没写',
-      level: info.level,
-      fans: stat.follower || 0,
-      following: stat.following || 0,
-      totalViews: up.view || 0,
-      totalLikes: upLikes,
-    };
-  }
-
-  // ===== GitHub Pages 模式：直连 B 站 API（可能被风控） =====
-  const API = {
-    userInfo: uid => `${FALLBACK_BASE}/x/space/acc/info?mid=${uid}`,
-    upstat: uid => `${FALLBACK_BASE}/x/space/upstat?mid=${uid}`,
-  };
-
-  const [infoRes, statRes] = await Promise.all([
-    fetch(API.userInfo(uid)).then(r => r.json()),
-    fetch(API.upstat(uid)).then(r => r.json()),
-  ]);
-
-  if (infoRes.code !== 0) {
-    throw new Error(infoRes.message || '用户不存在，请检查UID');
-  }
-
-  const info = infoRes.data;
-  const stat = statRes.data || {};
-
-  return {
-    uid: info.mid,
-    name: info.name,
-    avatar: info.face,
-    sign: info.sign || '这个人很懒，什么都没写',
-    level: info.level,
-    fans: info.follower || 0,
-    following: info.following || 0,
-    totalViews: stat.archive?.view || 0,
-    totalLikes: stat.likes || 0,
-  };
+// ========== Toast 提示 ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ========== 格式化数字 ==========
-function fmt(n) {
+// ========== 回车搜索 ==========
+document.getElementById('uidInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleRoast(); });
+
+// ========== 加载历史 ==========
+function loadHistory() {
+  const panel = document.getElementById('historyPanel');
+  try {
+    const h = JSON.parse(localStorage.getItem('roast_history') || '[]');
+    if (!h.length) { panel.innerHTML = '<div style="color:#999;font-size:12px;text-align:center;padding:8px;">暂无查询记录</div>'; return; }
+    panel.innerHTML = h.slice(0, 20).map(item =>
+      '<div class="history-item" onclick="historyQuery(\'' + item.uid + '\')">' +
+      '<span class="hi-name">' + item.name + '</span>' +
+      '<span class="hi-grade">' + item.grade + '</span>' +
+      '<span class="hi-time">' + (item.time || '') + '</span></div>'
+    ).join('');
+  } catch (e) { panel.innerHTML = ''; }
+}
+
+function toggleHistory() {
+  const panel = document.getElementById('historyPanel');
+  panel.classList.toggle('active');
+  if (panel.classList.contains('active')) loadHistory();
+}
+
+function historyQuery(uid) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+  document.querySelector('[data-tab="roast"]').classList.add('active');
+  document.getElementById('tab-roast').classList.add('active');
+  document.getElementById('uidInput').value = uid;
+  handleRoast();
+}
+
+// ========== 保存历史 ==========
+function saveHistory(uid, name, grade) {
+  try {
+    let h = JSON.parse(localStorage.getItem('roast_history') || '[]');
+    h = h.filter(x => x.uid !== uid);
+    h.unshift({ uid, name, grade, time: new Date().toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) });
+    if (h.length > 50) h = h.slice(0, 50);
+    localStorage.setItem('roast_history', JSON.stringify(h));
+  } catch (e) {}
+}
+
+// ========== 加载进度动画 ==========
+function setLoadingProgress(pct, text) {
+  document.getElementById('loadingBar').style.width = pct + '%';
+  if (text) document.getElementById('loadingText').textContent = text;
+}
+
+// ========== 核心：锐评请求 ==========
+async function handleRoast() {
+  const uid = document.getElementById('uidInput').value.trim();
+  if (!uid) { showToast('请输入 UID'); return; }
+
+  const btn = document.getElementById('roastBtn');
+  const loading = document.getElementById('loading');
+  const errorBox = document.getElementById('errorBox');
+  const result = document.getElementById('result');
+
+  errorBox.classList.remove('active');
+  result.classList.remove('active');
+  loading.classList.add('active');
+  btn.disabled = true;
+  setLoadingProgress(10, '正在获取用户数据...');
+
+  try {
+    const userRes = await fetch(API + '/user?mid=' + encodeURIComponent(uid));
+    const userJson = await userRes.json();
+    if (userJson.code !== 0 || !userJson.data) {
+      throw new Error(userJson.error || '获取用户信息失败，请检查 UID 是否正确');
+    }
+    setLoadingProgress(50, '数据获取成功，正在生成锐评...');
+
+    const u = userJson.data;
+    const roastRes = await fetch(API + '/roast', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        uid: u.uid,
+        name: u.name,
+        fans: u.fans,
+        totalViews: u.totalViews,
+        totalLikes: u.totalLikes,
+        videoCount: u.videoCount,
+        level: u.level,
+        sign: u.sign,
+        following: u.following,
+      }),
+    });
+    const roastJson = await roastRes.json();
+    if (roastJson.code !== 0) throw new Error(roastJson.error || '生成锐评失败');
+
+    setLoadingProgress(100, '锐评生成完毕！');
+    setTimeout(() => { loading.classList.remove('active'); }, 300);
+
+    const d = roastJson;
+    document.getElementById('uname').textContent = u.name;
+    document.getElementById('uidDisplay').textContent = 'UID ' + u.uid;
+    document.getElementById('gradeBadge').textContent = d.grade || '?';
+    if (u.avatar) {
+      document.getElementById('avatarImg').src = u.avatar;
+      document.getElementById('avatarImg').setAttribute('referrerpolicy', 'no-referrer');
+    }
+    document.getElementById('roastText').textContent = d.roast || '你号没了。';
+    document.getElementById('roastDetail').textContent = d.detail || '';
+
+    // AI 锐评
+    const aiEl = document.getElementById('aiRoast');
+    const aiTextEl = document.getElementById('aiRoastText');
+    if (d.aiRoast) {
+      aiTextEl.textContent = d.aiRoast;
+      aiEl.classList.add('active');
+    } else {
+      aiEl.classList.remove('active');
+    }
+
+    // Tags
+    const tagsWrap = document.getElementById('tagsWrap');
+    tagsWrap.innerHTML = '';
+    if (d.tags && d.tags.length) {
+      const colors = ['pink', 'blue', 'yellow'];
+      d.tags.forEach((tag, i) => {
+        const el = document.createElement('span');
+        el.className = 'tag ' + (colors[i % 3]);
+        el.textContent = tag;
+        tagsWrap.appendChild(el);
+      });
+    }
+
+    // 数据
+    function fmt(n) {
+      if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿';
+      if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+      return String(n);
+    }
+    document.getElementById('dFans').textContent = fmt(u.fans);
+    document.getElementById('dViews').textContent = fmt(u.totalViews);
+    document.getElementById('dLikes').textContent = fmt(u.totalLikes);
+    document.getElementById('dVideoCount').textContent = fmt(u.videoCount);
+
+    result.classList.add('active');
+
+    saveHistory(u.uid, u.name, d.grade);
+    btn.disabled = false;
+
+  } catch (err) {
+    loading.classList.remove('active');
+    errorBox.classList.add('active');
+    document.getElementById('errorText').textContent = '❌ ' + err.message;
+    btn.disabled = false;
+  }
+}
+
+async function handleReRoast() {
+  document.getElementById('result').classList.remove('active');
+  await handleRoast();
+}
+
+// ========== 分享 ==========
+function shareResult() {
+  const name = document.getElementById('uname').textContent;
+  const grade = document.getElementById('gradeBadge').textContent;
+  const roast = document.getElementById('roastText').textContent;
+  const text = '【B站锐评】' + name + ' 的评级：' + grade + '\n' + roast + '\n\n来测测你的B站账号 → ' + location.origin + (STATIC || '/');
+  if (navigator.share) {
+    navigator.share({ title: 'B站锐评', text }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板')).catch(() => showToast('复制失败'));
+  }
+}
+
+// ========== 排行榜 ==========
+let lbCache = null;
+
+async function loadLeaderboard() {
+  const sort = document.getElementById('lbSort').value;
+  const period = document.getElementById('lbPeriod').value;
+  const wrap = document.getElementById('lbTableWrap');
+  const statsEl = document.getElementById('lbStats');
+
+  wrap.innerHTML = '<div class="lb-loading">加载中...</div>';
+
+  try {
+    const res = await fetch(API + '/leaderboard?sort=' + sort + '&period=' + period + '&limit=50');
+    const json = await res.json();
+    if (json.code !== 0) throw new Error(json.error || '加载失败');
+
+    lbCache = json.data || [];
+
+    // 统计数据
+    const stats = json.stats || {};
+    statsEl.innerHTML =
+      '<div class="lb-stat"><div class="lb-sv">' + (stats.total_roasts || 0) + '</div><div class="lb-sl">总锐评次数</div></div>' +
+      '<div class="lb-stat"><div class="lb-sv">' + (stats.total_users || 0) + '</div><div class="lb-sl">被锐评UP主</div></div>' +
+      '<div class="lb-stat"><div class="lb-sv">' + (stats.today_roasts || 0) + '</div><div class="lb-sl">今日锐评</div></div>';
+
+    if (!lbCache.length) {
+      wrap.innerHTML = '<div class="lb-empty">暂无数据，快去锐评几个UP主吧！</div>';
+      return;
+    }
+
+    let html =
+      '<div class="lb-row lb-header">' +
+      '<div class="lb-rank">#</div><div class="lb-user">UP主</div><div class="lb-grade">级</div><div class="lb-count">粉丝</div><div class="lb-count">播放</div><div class="lb-count">锐评</div>' +
+      '</div>';
+
+    lbCache.forEach((item, i) => {
+      const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+      html += '<div class="lb-row" onclick="queryUid(\'' + item.uid + '\')">' +
+        '<div class="lb-rank ' + rankClass + '">' + (i + 1) + '</div>' +
+        '<div class="lb-user"><div class="lb-name">' + item.uname + '</div></div>' +
+        '<div class="lb-grade">' + (item.grade || '?') + '</div>' +
+        '<div class="lb-count">' + fmtNum(item.fans) + '</div>' +
+        '<div class="lb-count">' + fmtNum(item.total_views || item.totalViews || 0) + '</div>' +
+        '<div class="lb-count">' + (item.roast_count || item.searched_count || 0) + '</div>' +
+        '</div>';
+    });
+
+    wrap.innerHTML = html;
+  } catch (err) {
+    wrap.innerHTML = '<div class="lb-empty">加载失败：' + err.message + '</div>';
+  }
+}
+
+function fmtNum(n) {
   if (n >= 100000000) return (n / 100000000).toFixed(1) + '亿';
   if (n >= 10000) return (n / 10000).toFixed(1) + '万';
   return String(n);
 }
 
-// ========== 锐评引擎 ==========
-function generateRoast(data) {
-  const { name, fans, totalViews, totalLikes, level, sign, following } = data;
-
-  const likeViewRatio = totalViews > 0 ? totalLikes / totalViews : 0;
-  const fanViewRatio = fans > 0 ? totalViews / fans : 0;
-  let grade, title, roasts, details, tags;
-
-  // 等级判定
-  if (fans >= 1000000) {
-    grade = 'S'; title = '百大UP主 👑';
-    roasts = [
-      '百大UP主「' + name + '」是吧？建议把"B站是我家"刻在脑门上。',
-      '粉丝' + fmt(fans) + '，平均每个视频够开一场线下见面会了。',
-      '你的视频我看过，确实牛逼——但下次能不能别再标题党了？',
-    ];
-    details = ['粉丝' + fmt(fans) + '、总播放' + fmt(totalViews) + '，数据碾压99%的UP主。但越是顶流，翻车的时候摔得越惨。', '内容质量有目共睹，建议少接点商单，多做点好内容。'];
-    tags = ['👑 百大', '🔥 顶流', '💰 不缺钱'];
-  } else if (fans >= 100000) {
-    grade = 'A'; title = '知名UP主 ✨';
-    roasts = [
-      '「' + name + '」——在B站也算个名人了，虽然出了B站没人认识你。',
-      '粉丝' + fmt(fans) + '，按B站人均粉丝算法，你相当于一个小县城的人口。',
-      '你的视频质量还行，就是更新频率像极了甲方催稿前的你。',
-    ];
-    details = [fmt(fans) + '粉丝，在B站属于中上层。但' + (level < 6 ? '等级才Lv.'+level+'，混了这么久还没满级' : '等级Lv.'+level+'，老玩家了') + '，懂我意思吧？'];
-    tags = ['📈 小有名气', '🎬 质量还行', '⏰ 爱更不更'];
-  } else if (fans >= 10000) {
-    grade = 'B'; title = '万粉UP主 😏';
-    roasts = [
-      fmt(fans) + '粉丝，勉强够在B站要个认证了——虽然也没啥用。',
-      '「' + name + '」—— 一万个人关注了你，但其中至少有2000是僵尸粉。',
-      '粉丝' + fmt(fans) + '，播放' + fmt(totalViews) + '，数据还行但离起飞总差一口气。',
-    ];
-    details = [fmt(fans) + '粉丝·' + fmt(totalViews) + '播放。数据还行，但离起飞总差那么一口气。', '建议学学别人的标题怎么起的——你现在的标题跟论文题目似的。'];
-    tags = ['🌱 万粉', '📊 有数据', '🚀 差一口气'];
-  } else if (fans >= 1000) {
-    grade = 'C'; title = '千粉小UP 🥬';
-    roasts = [
-      fmt(fans) + '粉，恭喜你已经超越了B站80%的注册用户——另外20%是注册完就没登录过的。',
-      '等级Lv.' + level + '，粉丝' + fmt(fans) + '——你这个号像极了我的健身卡，办了但没完全用。',
-      '总播放' + fmt(totalViews) + '，' + fmt(fans) + '个粉丝，建议先定个小目标。',
-    ];
-    details = [fmt(fans) + '粉丝，在B站算刚起步。' + (sign.length > 20 ? '简介写了一大串但没什么人看' : '简介比你的播放量还短') + '。', '建议先定个小目标：让粉丝数超过你关注的人数（' + fmt(following) + '）。'];
-    tags = ['🌱 千粉', '💪 还在努力', '📺 小UP主'];
-  } else if (fans >= 100) {
-    grade = 'D'; title = '百粉透明 💀';
-    roasts = [
-      fmt(fans) + '粉，说好听点叫"小而美"，说难听点就是没人看。',
-      '「' + name + '」你的视频播放量加起来，还没你B站首页推荐的一个零头多。',
-      fmt(fans) + '个粉丝——B站的推荐算法可能真的不认识你。',
-    ];
-    details = ['数据惨淡但别灰心——谁还不是从0开始的呢？建议检查一下标题、封面、内容三个核心要素。', level === 0 ? '注册了这么久还是Lv.0，你到底是来发视频的还是来看视频的？' : '等级Lv.'+level+'，还有很长的路要走。'];
-    tags = ['👻 透明人', '📉 数据惨淡', '💀 算法不认识'];
-  } else {
-    grade = 'F'; title = '建议注销 🔥';
-    roasts = [
-      fmt(fans) + '个粉丝——你管这叫UP主？',
-      '「' + name + '」你的账号像被遗弃的QQ空间，注册了就再也没管过。',
-      'B站服务器为你浪费了存储空间，建议你交点电费。',
-    ];
-    details = ['要么刚注册，要么放弃治疗了。不管是哪种，这个锐评就是你账号的全部高光时刻。'];
-    tags = ['🗑️ 空账号', '💤 已弃坑', '🤷 来都来了'];
-  }
-
-  // 追加基于真实数据的定制吐槽
-  var extraDetails = [];
-  if (fanViewRatio > 0 && fanViewRatio < 5 && fans > 100) extraDetails.push('总播放' + fmt(totalViews) + '，连粉丝数的' + Math.round(fanViewRatio) + '倍都不到——你的粉丝自己都不看你的视频。');
-  if (likeViewRatio > 0 && likeViewRatio < 0.02) extraDetails.push('点赞率' + (likeViewRatio*100).toFixed(1) + '%，观众连点个赞都懒得动手指。');
-  if (level >= 5 && fans < 1000) extraDetails.push('等级Lv.' + level + '才' + fmt(fans) + '粉——你是在B站养老吗？');
-  if (following > 1000) extraDetails.push('关注了' + fmt(following) + '个人，你这是逛B站还是逛菜市场？');
-  if (sign.indexOf('商务') !== -1 || sign.indexOf('合作') !== -1 || sign.indexOf('微信') !== -1) extraDetails.push('简介放了联系方式，一看就是想恰饭的。');
-  if (sign.indexOf('学生') !== -1 || sign.indexOf('大学生') !== -1) extraDetails.push('学生UP主，懂了——时间多但不想更。');
-
-  if (extraDetails.length > 0) {
-    details.push(extraDetails[Math.floor(Math.random() * extraDetails.length)]);
-  }
-
-  // 额外标签
-  var extraTags = [];
-  if (level >= 6) extraTags.push('🏆 Lv.6大佬');
-  if (fans > following) extraTags.push('📈 粉丝>关注');
-  if (likeViewRatio > 0.05) extraTags.push('👍 点赞率高');
-  if (sign.length > 100) extraTags.push('📝 小作文简介');
-  if (sign === '' || sign === '这个人很懒，什么都没写') extraTags.push('😴 懒人简介');
-
-  return {
-    grade: grade, title: title,
-    roast: roasts[Math.floor(Math.random() * roasts.length)],
-    detail: details[Math.floor(Math.random() * details.length)],
-    tags: tags.concat(extraTags).slice(0, 6),
-  };
-}
-
-// ========== 主流程 ==========
-const LOADING_TEXTS = [
-  '正在查询B站API...', '分析粉丝成分中...', '计算播放量密度...',
-  '评估视频质量...', '翻看历史视频...', '跟推荐算法激烈讨论...',
-  '准备扎心台词...', '格式化毒舌输出...', 'AI 锐评生成中...',
-];
-
-async function startRoast() {
-  const input = document.getElementById('uidInput').value.trim();
-  if (!input || !/^\d+$/.test(input)) {
-    showToast('请输入纯数字UID！');
-    return;
-  }
-
-  // 重置UI
-  document.getElementById('roastBtn').disabled = true;
-  document.getElementById('loading').classList.add('active');
-  document.getElementById('result').classList.remove('active');
-  document.getElementById('errorBox').classList.remove('active');
-  document.getElementById('avatar').querySelector('img').src = '';
-
-  // 加载动画
-  const bar = document.getElementById('loadingBar');
-  const loadingText = document.getElementById('loadingText');
-  let progress = 0, ti = 0;
-  const tInt = setInterval(() => {
-    ti = (ti + 1) % LOADING_TEXTS.length;
-    loadingText.textContent = LOADING_TEXTS[ti];
-  }, 500);
-  const pInt = setInterval(() => {
-    progress += Math.random() * 12 + 3;
-    if (progress > 90) progress = 90;
-    bar.style.width = progress + '%';
-  }, 200);
-
-  try {
-    const data = await fetchBilibiliData(input);
-    clearInterval(tInt); clearInterval(pInt);
-    bar.style.width = '100%';
-    await new Promise(r => setTimeout(r, 300));
-
-    displayResult(data);
-    document.getElementById('loading').classList.remove('active');
-    document.getElementById('result').classList.add('active');
-    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-    // 异步调用 AI 毒舌文案（不阻塞显示）
-    fetch('/roast/api/v2/roast', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    }).then(function(r) { return r.json(); }).then(function(r) {
-      if (r.code === 0 && r.roast) {
-        document.getElementById('roastText').textContent = r.roast;
-      }
-    }).catch(function() {});
-  } catch (err) {
-    clearInterval(tInt); clearInterval(pInt);
-    document.getElementById('loading').classList.remove('active');
-    showError(err.message || '获取数据失败，请检查UID是否正确');
-  }
-  document.getElementById('roastBtn').disabled = false;
-}
-
-function displayResult(data) {
-  const result = generateRoast(data);
-
-  document.getElementById('uname').textContent = data.name;
-  document.getElementById('uidDisplay').textContent = 'UID: ' + data.uid;
-  const avatarImg = document.getElementById('avatar').querySelector('img');
-  avatarImg.src = data.avatar || '';
-  document.getElementById('resultBadge').textContent = result.grade;
-  document.getElementById('roastText').textContent = result.roast;
-  document.getElementById('roastDetail').textContent = result.detail;
-
-  const gradeColors = { S: '#FFD700', A: '#00A1D6', B: '#999', C: '#FF8C00', D: '#FB7299', F: '#000' };
-  document.getElementById('resultBadge').style.color = gradeColors[result.grade] || '#000';
-
-  // 数据展示
-  document.getElementById('dFans').textContent = fmt(data.fans);
-  document.getElementById('dViews').textContent = fmt(data.totalViews);
-  document.getElementById('dLikes').textContent = fmt(data.totalLikes);
-
-  // 标签
-  const tc = document.getElementById('tags');
-  tc.innerHTML = '';
-  result.tags.forEach((t, i) => {
-    const s = document.createElement('span');
-    s.className = 'tag ' + (['pink','blue','yellow','',''][i % 5]);
-    s.textContent = t;
-    tc.appendChild(s);
-  });
-}
-
-function showError(msg) {
-  document.getElementById('errorContent').innerHTML = `<strong>😅 翻车了</strong><br>${msg}`;
-  document.getElementById('errorBox').classList.add('active');
-  document.getElementById('errorBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-function shareResult() {
-  const uname = document.getElementById('uname').textContent;
-  const grade = document.getElementById('resultBadge').textContent;
-  const roast = document.getElementById('roastText').textContent;
-  const text = `我的B站号「${uname}」被锐评了！等级：${grade}\n${roast}`;
-  if (navigator.share) {
-    navigator.share({ title: 'B站锐评', text }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(text).then(() => showToast('已复制到剪贴板！')).catch(() => showToast('复制失败'));
-  }
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-
-function fillExample(uid) {
+function queryUid(uid) {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+  document.querySelector('[data-tab="roast"]').classList.add('active');
+  document.getElementById('tab-roast').classList.add('active');
   document.getElementById('uidInput').value = uid;
-  startRoast();
+  handleRoast();
 }
 
-document.getElementById('uidInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') startRoast();
+// ========== 页面加载完毕自动加载排行榜 ==========
+document.addEventListener('DOMContentLoaded', function() {
+  loadHistory();
 });
 </script>
+
 </body>
 </html>

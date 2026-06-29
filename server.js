@@ -1,94 +1,25 @@
 ﻿const http = require('http');
-const https = require('https');
-const crypto = require('crypto');
+const path = require('path');
 const fs = require('fs');
 const { URL } = require('url');
+const crypto = require('crypto');
+
+const logger = require('./logger');
+const db = require('./db');
+const wbi = require('./wbi');
+const bili = require('./bili');
+const ai = require('./ai');
+const roast = require('./roast');
 
 const PORT = 3456;
-const BILI_API = 'api.bilibili.com';
 
-const MIXIN_KEY_ENC_TAB = [
-  46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35,
-  27, 43, 5, 49, 33, 9, 42, 19, 29, 28, 14, 37, 12, 52, 56, 7,
-  0, 57, 39, 55, 59, 13, 40, 1, 38, 24, 54, 26, 21, 16, 25, 11,
-  51, 44, 34, 20, 48, 41, 36, 6, 17, 60, 22, 22, 62, 63, 61, 4,
-];
+// ========== 初始化 ==========
+db.initDB();
+logger.info('B站锐评服务器启动中...');
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
-
-// ========== 固定的浏览器指纹（复用，不每次生成） ==========
-function randStr(len) {
-  return crypto.randomBytes(Math.ceil(len / 2)).toString('hex').slice(0, len);
-}
-const FIXED_COOKIES = (() => {
-  const ts = Date.now();
-  const fp = `${ts}_${Math.floor(Math.random() * 1e7)}_${Math.floor(Math.random() * 1e7)}`;
-  return [
-    `buvid3=${randStr(8)}-${randStr(4)}-${randStr(4)}-${randStr(4)}-${randStr(12)}infoc`,
-    `buvid4=${randStr(16)}`,
-    `fingerprint=${fp}`,
-    `buvid_fp=${fp}`,
-    `buvid_fp_clean=${fp}`,
-    `b_nut=${ts}`,
-    `buvid_ts=${Math.floor(ts / 1000)}`,
-    `rpdid=|(${randStr(8)}${randStr(4)})`,
-  ].join('; ');
-})();
-
-// 从环境变量读取 B 站登录态（解锁更多数据 + 抗风控）
-const USER_COOKIE = process.env.BILI_USER_COOKIE || (() => { try { return fs.readFileSync('/opt/bili_cookie','utf8').trim(); } catch(e) { return ''; } })();
-
-// ========== WBI 签名 ==========
-let wbiKeys = null;
-let wbiFetching = false;
-let wbiQueue = [];
-
-async function getWbiKeys() {
-  if (wbiKeys) return wbiKeys;
-  if (wbiFetching) return new Promise(r => wbiQueue.push(r));
-  wbiFetching = true;
-  try {
-    const data = await biliFetch('/x/web-interface/nav');
-    const img = data.data?.wbi_img;
-    if (!img) throw new Error('获取WBI密钥失败');
-    const imgKey = img.img_url.replace(/^https?:\/\/[^/]+\//, '').replace(/\.png$/, '');
-    const subKey = img.sub_url.replace(/^https?:\/\/[^/]+\//, '').replace(/\.png$/, '');
-    wbiKeys = { imgKey, subKey };
-    // 12 小时刷新
-    setTimeout(() => { wbiKeys = null; }, 12 * 60 * 60 * 1000);
-  } finally {
-    wbiFetching = false;
-    wbiQueue.forEach(r => r());
-    wbiQueue = [];
-  }
-  return wbiKeys;
-}
-
-function getMixinKey(imgKey, subKey) {
-  let mixin = '';
-  for (let i = 0; i < 32; i++) mixin += (imgKey + subKey)[MIXIN_KEY_ENC_TAB[i]];
-  return mixin;
-}
-
-async function wbiSign(params) {
-  const keys = await getWbiKeys();
-  const mixinKey = getMixinKey(keys.imgKey, keys.subKey);
-  const wts = Math.floor(Date.now() / 1000);
-  params.wts = wts;
-  const sorted = Object.keys(params).sort()
-    .map(k => `${k}=${encodeURIComponent(String(params[k]))}`)
-    .join('&');
-  params.w_rid = crypto.createHash('md5').update(sorted + mixinKey).digest('hex');
-  return params;
-}
-
-function sleep(ms) {
-  return new Promise(r => setTimeout(r, ms));
-}
-
-// ========== 响应缓存（避免重复请求） ==========
+// ========== 缓存模块 ==========
 const cache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 分钟
+const CACHE_TTL = 5 * 60 * 1000;
 
 function getCache(key) {
   const entry = cache.get(key);
@@ -99,199 +30,192 @@ function getCache(key) {
   }
   return entry.data;
 }
+
 function setCache(key, data) {
   cache.set(key, { data, time: Date.now() });
 }
 
-// ========== 请求队列（序列化 + 降频 + 重试） ==========
-const requestQueue = [];
-let processing = false;
-
-async function processQueue() {
-  if (processing) return;
-  processing = true;
-  while (requestQueue.length > 0) {
-    const { path, retries, resolve, reject } = requestQueue.shift();
-    let result = null;
-    let lastErr = null;
-    for (let attempt = 0; attempt < retries; attempt++) {
-      try {
-        result = await biliFetchOnce(path);
-        if (result && result.code === -799) {
-          const wait = 2000 * (attempt + 1) + Math.random() * 2000;
-          await sleep(wait);
-          continue;
-        }
-        lastErr = null;
-        break;
-      } catch (e) {
-        lastErr = e;
-        if (attempt < retries - 1) {
-          await sleep(2000 + Math.random() * 2000);
-        }
-      }
-    }
-    if (lastErr) { reject(lastErr); processing = false; return; }
-    resolve(result);
-    // 请求间隔（有 Cookie 登录，限流宽松）
-    if (requestQueue.length > 0) await sleep(800 + Math.random() * 600);
-  }
-  processing = false;
+function getClientIP(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
 }
 
-function biliFetch(path, retries = 3) {
-  return new Promise((resolve, reject) => {
-    requestQueue.push({ path, retries, resolve, reject });
-    processQueue();
-  });
+function ipHash(ip) {
+  return crypto.createHash('md5').update(ip + '-bili-roast-salt').digest('hex').slice(0, 8);
 }
 
-function biliFetchOnce(path) {
+function json(res, data, statusCode = 200) {
+  res.statusCode = statusCode;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.end(JSON.stringify(data));
+}
+
+function readBody(req) {
   return new Promise((resolve, reject) => {
-    const u = new URL(path, `https://${BILI_API}`);
-    const opts = {
-      hostname: BILI_API, port: 443,
-      path: u.pathname + u.search,
-      method: 'GET',
-      headers: {
-        'User-Agent': USER_AGENT,
-        'Referer': 'https://www.bilibili.com/',
-        'Origin': 'https://www.bilibili.com',
-        'Cookie': USER_COOKIE ? FIXED_COOKIES + '; ' + USER_COOKIE : FIXED_COOKIES,
-        'Accept': 'application/json, text/plain, */*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-      },
-    };
-    const req = https.request(opts, res => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => {
-        try { resolve(JSON.parse(data)); } catch { reject(new Error('非JSON响应')); }
-      });
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try { resolve(JSON.parse(body)); } catch { reject(new Error('无效的 JSON')); }
     });
     req.on('error', reject);
-    req.setTimeout(20000, () => { req.destroy(); reject(new Error('超时')); });
-    req.end();
   });
 }
 
-// ========== DeepSeek 毒舌文案生成 ==========
-const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY || (function() { try {
-  var raw = fs.readFileSync('/opt/deepseek_key','utf8').trim();
-  var parts = raw.split(':');
-  if (parts.length !== 2) return '';
-  var decKey = crypto.createHash('sha256').update('bilibili-roast-ds-key-v1').digest();
-  var decipher = crypto.createDecipheriv('aes-256-cbc', decKey, Buffer.from(parts[0],'hex'));
-  var dec = decipher.update(parts[1],'hex','utf8');
-  dec += decipher.final('utf8');
-  return dec;
-} catch(e) { return ''; }})();
+// ========== 路由 ==========
+const routes = {
+  'GET /api/user': handleUser,
+  'POST /api/roast': handleRoast,
+  'GET /api/leaderboard': handleLeaderboard,
+  'GET /api/stats': handleStats,
+};
 
-async function generateDeepSeekRoast(data) {
-  if (!DEEPSEEK_KEY) return null;
-  const prompt = '根据以下B站UP主数据写一段毒舌点评（30-60字）：\n'
-    + '名称：' + data.name + '\n粉丝：' + data.fans
-    + '\n总播放：' + data.totalViews + '\n总点赞：' + data.totalLikes
-    + '\n视频数：' + data.videoCount + '\n等级：Lv.' + data.level
-    + '\n简介：' + (data.sign || '无');
-  return new Promise(function(r) {
-    var body = JSON.stringify({
-      model: 'deepseek-chat',
-      messages: [
-        { role: 'system', content: '你是B站锐评机器人。每次回复风格都不同，犀利幽默。直接输出点评，不要前缀，不要Emoji。' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.95, max_tokens: 200,
-    });
-    var opts = {
-      hostname: 'api.deepseek.com', path: '/v1/chat/completions', method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + DEEPSEEK_KEY },
+async function handleUser(req, res, url) {
+  const mid = url.searchParams.get('mid');
+  if (!mid) return json(res, { error: '缺少 mid 参数' }, 400);
+
+  const reqStart = Date.now();
+  const cacheKey = `user:${mid}`;
+  const cached = getCache(cacheKey);
+  if (cached) {
+    logger.info(`[API] /api/user?mid=${mid} ${Date.now() - reqStart}ms CACHED`);
+    return json(res, { code: 0, data: cached, cached: true });
+  }
+
+  const { rawInfo, merged } = await bili.fetchUserData(mid);
+
+  if (!rawInfo) {
+    return json(res, { code: -1, error: 'B站API请求失败，请稍后重试' }, 502);
+  }
+  if (rawInfo.code !== 0) {
+    return json(res, { code: -1, error: rawInfo.message || '用户不存在，请检查UID' }, 404);
+  }
+
+  const userData = {
+    uid: merged.uid,
+    name: merged.name,
+    avatar: merged.avatar,
+    sign: merged.sign,
+    level: merged.level,
+    fans: merged.fans,
+    following: merged.following,
+    totalViews: merged.totalViews,
+    totalLikes: merged.totalLikes,
+    videoCount: merged.videoCount,
+  };
+
+  setCache(cacheKey, userData);
+  logger.info(`[API] /api/user?mid=${mid} ${Date.now() - reqStart}ms`);
+
+  json(res, { code: 0, data: userData });
+}
+
+async function handleRoast(req, res, url) {
+  try {
+    const data = await readBody(req);
+    const userData = {
+      name: data.name || '未知',
+      fans: Number(data.fans) || 0,
+      totalViews: Number(data.totalViews) || 0,
+      totalLikes: Number(data.totalLikes) || 0,
+      videoCount: Number(data.videoCount) || 0,
+      level: Number(data.level) || 0,
+      sign: data.sign || '',
+      following: Number(data.following) || 0,
+      videos: data.videos || [],
     };
-    var req = https.request(opts, function(res) {
-      var d = ''; res.on('data', function(c) { d += c; });
-      res.on('end', function() {
-        try { r(JSON.parse(d).choices?.[0]?.message?.content?.trim() || null); } catch(e) { r(null); }
-      });
+
+    const result = roast.generateRoast(userData);
+
+    let aiRoast = null;
+    try {
+      aiRoast = await ai.generateDeepSeekRoast(userData);
+    } catch (e) {
+      logger.warn('AI 锐评异常: ' + e.message);
+    }
+
+    const ip = getClientIP(req);
+    db.saveRoast({
+      uid: String(data.uid || ''),
+      uname: userData.name,
+      fans: userData.fans,
+      total_views: userData.totalViews,
+      total_likes: userData.totalLikes,
+      video_count: userData.videoCount,
+      level: userData.level,
+      grade: result.grade,
+      roast_text: result.roast + ' ' + result.detail,
+      ai_roast: aiRoast || '',
+      ip_hash: ipHash(ip),
     });
-    req.on('error', function() { r(null); });
-    req.write(body); req.end();
-  });
+
+    json(res, {
+      code: 0,
+      grade: result.grade,
+      title: result.title,
+      roast: aiRoast || result.roast,
+      detail: result.detail,
+      tags: result.tags,
+      localRoast: aiRoast ? result.roast : null,
+    });
+  } catch (err) {
+    logger.error(`锐评处理失败: ${err.message}`);
+    json(res, { code: -1, error: err.message });
+  }
 }
 
-// ========== HTTP 服务 ==========
-const server = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
-
-  const url = new URL(req.url, `http://localhost:${PORT}`);
-  const path = url.pathname;
+async function handleLeaderboard(req, res, url) {
+  const sort = url.searchParams.get('sort') || 'fans';
+  const period = url.searchParams.get('period') || 'all';
+  const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 100);
 
   try {
-    if (path === '/api/user') {
-      const mid = url.searchParams.get('mid');
-      if (!mid) { res.statusCode = 400; res.end(JSON.stringify({ error: '缺少mid参数' })); return; }
+    const data = db.getLeaderboard({ sort, period, limit });
+    const stats = db.getStats();
+    json(res, { code: 0, data, stats });
+  } catch (err) {
+    logger.error(`排行榜查询失败: ${err.message}`);
+    json(res, { code: -1, error: err.message });
+  }
+}
 
-      // 检查缓存
-      const cacheKey = `user:${mid}`;
-      const cached = getCache(cacheKey);
-      if (cached) {
-        res.end(JSON.stringify({ code: 0, info: cached.info, relation: cached.relation, upstat: cached.upstat, cached: true }));
-        return;
-      }
+async function handleStats(req, res) {
+  try {
+    const stats = db.getStats();
+    const recent = db.getRecentUids(10);
+    json(res, { code: 0, stats, recent });
+  } catch (err) {
+    json(res, { code: -1, error: err.message });
+  }
+}
 
-      // 并行取 WBI key 和发请求（不经过队列，真正并行）
-      var [wbiPromise] = await Promise.all([getWbiKeys()]);
-      var infoParams = await wbiSign({ mid });
-      var qs = Object.entries(infoParams).map(function(e) { return e[0] + '=' + encodeURIComponent(String(e[1])); }).join('&');
+// ========== HTTP 服务器 ==========
+const server = http.createServer(async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
 
-      async function fetchRetry(url, retries) {
-        for (var i = 0; i < retries; i++) {
-          try {
-            var r = await biliFetchOnce(url);
-            if (r && r.code === -799) { await sleep(2000 + Math.random() * 2000); continue; }
-            return r;
-          } catch(e) { if (i < retries - 1) await sleep(1000 + Math.random() * 1000); }
-        }
-        return null;
-      }
+  const url = new URL(req.url, 'http://localhost:' + PORT);
+  const routeKey = req.method + ' ' + url.pathname;
 
-      var [rawInfo, rawRelation, rawUpstat] = await Promise.all([
-        fetchRetry('/x/space/acc/info?' + qs, 4),
-        fetchRetry('/x/relation/stat?vmid=' + mid, 2),
-        USER_COOKIE ? fetchRetry('/x/space/upstat?mid=' + mid, 2) : Promise.resolve(null),
-      ]);
-
-      setCache(cacheKey, { info: rawInfo, relation: rawRelation, upstat: rawUpstat });
-
-      res.end(JSON.stringify({ code: 0, info: rawInfo, relation: rawRelation, upstat: rawUpstat }));
-    } else if (path === '/api/roast' && req.method === 'POST') {
-      let body = '';
-      req.on('data', function(c) { body += c; });
-      req.on('end', async function() {
-        try {
-          var data = JSON.parse(body);
-          var roast = await generateDeepSeekRoast(data);
-          res.end(JSON.stringify({ code: 0, roast: roast || '' }));
-        } catch (err) {
-          res.end(JSON.stringify({ code: -1, error: err.message }));
-        }
-      });
+  try {
+    const handler = routes[routeKey];
+    if (handler) {
+      await handler(req, res, url);
+    } else if (url.pathname === '/' || url.pathname === '/index.html') {
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.end(fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8'));
     } else {
-      res.statusCode = 404;
-      res.end(JSON.stringify({ error: '未知路径' }));
+      json(res, { error: '未知路径' }, 404);
     }
   } catch (err) {
-    res.statusCode = 500;
-    res.end(JSON.stringify({ error: err.message }));
+    logger.error('服务器错误: ' + err.message);
+    json(res, { error: '服务器内部错误' }, 500);
   }
 });
 
 server.listen(PORT, '127.0.0.1', () => {
-  console.log(`[B站代理] http://127.0.0.1:${PORT}`);
-  if (USER_COOKIE) console.log('[B站代理] 已加载登录态，将使用账号身份请求');
-  // 预加载 WBI 密钥
-  getWbiKeys().then(() => console.log('[WBI] 密钥已缓存')).catch(() => {});
+  logger.info('B站锐评服务器运行中 http://127.0.0.1:' + PORT);
+  if (process.env.BILI_USER_COOKIE || process.env.BILI_SESSDATA) logger.info('已加载B站登录态');
+  wbi.fetchWbiKeys(bili.biliFetchOnce).catch(() => {});
 });
